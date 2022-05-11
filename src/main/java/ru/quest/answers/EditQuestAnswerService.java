@@ -31,12 +31,14 @@ import static ru.quest.answers.EditTaskAnswerService.*;
 @Service
 public class EditQuestAnswerService implements AnswerService{
     public static final String CREATE_NEW_QUEST = "Создать новый квест";
+    public static final String THIS_QUEST = "thisQuest";
+
     private static final String DELETE_QUEST= "Удалить квест";
+    private static final String ASK_ABOUT_DELETE_QUEST= "Вы действительно хотите безвозвратно удалить квест";
     private static final String ENTER_NAME = "Введите название";
     private static final String CHOOSE_TYPE = "Выберите тип квеста";
     private static final String ENTER_DESCRIPTION = "Введите описание";
     private static final String ENTER_DATETIME = "Введите дату и время начала квеста в формате 12.12.2012 12:00";
-    public static final String THIS_QUEST = "thisQuest";
     private static final String ADD_NEW_INSTRUCTION = "Добавить инструкцию";
     private static final String ENTER_INSTRUCTION_TEXT = "Добавить инструкцию";
     private static final String SHOW_INSTRUCTION = "Посмотреть инструкцию";
@@ -96,12 +98,25 @@ public class EditQuestAnswerService implements AnswerService{
         }
         else if (dto.getText().matches(DELETE_QUEST + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":", 2)[1]);
+            Quest quest = questService.get(questId);
+            String message = ASK_ABOUT_DELETE_QUEST + " \"" + quest.getName() + "\"?";
+            String[] buttons = new String[2];
+            buttons[0] = YES;
+            buttons[1] = NO;
+            answerDTO.getMessages().add(getSendMessage(message, buttons, dto.getChatId()));
+            lastAnswerService.addLastAnswer(message, dto.getChatId());
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).contains(ASK_ABOUT_DELETE_QUEST) && dto.getText().equals(YES)) {
+            String questName = lastAnswerService.deleteLastAnswer(dto.getChatId()).split("\"", 3)[1].trim();
+            Quest thisQuest = questService.get(questName);
             List<Quest> quests = questService.getaAll();
-            Quest questToDelete = quests.stream().filter(quest -> quest.getId() == questId).findFirst().get();
+            Quest questToDelete = quests.stream().filter(quest -> quest.getId() == thisQuest.getId()).findFirst().get();
             int index = quests.indexOf(questToDelete);
 
             quests.remove(questToDelete);
             questService.delete(questToDelete);
+
+            answerDTO.getMessages().add(getSendMessage("Квест \"" + questName + "\" удалён", dto.getChatId()));
 
             if (quests.isEmpty()) {
                 String[] buttons = new String[1];
@@ -111,6 +126,15 @@ public class EditQuestAnswerService implements AnswerService{
             }
 
             index = Math.max(index - 1, 0);
+            sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).contains(ASK_ABOUT_DELETE_QUEST) && dto.getText().equals(NO)) {
+            String questName = lastAnswerService.deleteLastAnswer(dto.getChatId()).split("\"", 3)[1].trim();
+            long questId = questService.get(questName).getId();
+            List<Quest> quests = questService.getaAll();
+            Quest thisQuest = quests.stream().filter(quest -> quest.getId() == questId).findFirst().get();
+            int index = quests.indexOf(thisQuest);
+
             sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
         else if (dto.getText().equals(CREATE_NEW_QUEST)) {

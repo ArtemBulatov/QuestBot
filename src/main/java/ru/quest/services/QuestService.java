@@ -24,6 +24,10 @@ public class QuestService {
         return questRepository.getById(id);
     }
 
+    public Quest get(String name) {
+        return questRepository.findQuestByName(name).orElse(null);
+    }
+
     public List<Quest> getaAll() {
         return questRepository.findAll();
     }
