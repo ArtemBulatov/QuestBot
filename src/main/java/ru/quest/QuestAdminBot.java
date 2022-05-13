@@ -12,6 +12,10 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.*;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.quest.answers.*;
+import ru.quest.answers.ApproveRegistrationAnswerService;
+import ru.quest.answers.EditHintAnswerService;
+import ru.quest.answers.EditQuestAnswerService;
+import ru.quest.answers.EditTaskAnswerService;
 import ru.quest.dto.AnswerDTO;
 import ru.quest.dto.MessageDTO;
 import ru.quest.enums.AdminStatus;
@@ -22,7 +26,7 @@ import ru.quest.utils.MessageDtoUtil;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
+import static ru.quest.answers.AnswerConstants.*;
 import static ru.quest.answers.EditHintAnswerService.*;
 import static ru.quest.answers.EditQuestAnswerService.CREATE_NEW_QUEST;
 import static ru.quest.answers.EditQuestAnswerService.THIS_QUEST;
@@ -43,13 +47,17 @@ public class QuestAdminBot extends TelegramLongPollingBot {
     private final EditTaskAnswerService editTaskAnswerService;
     private final EditHintAnswerService editHintAnswerService;
     private final ApproveRegistrationAnswerService approveRegistrationAnswerService;
+    private final ConfirmAnswerService confirmAnswerService;
+    private final ResultQuestGameAnswerService resultQuestGameAnswerService;
     private final UserService userService;
 
-    public QuestAdminBot(EditQuestAnswerService editQuestAnswerService, UserService userService, EditTaskAnswerService editTaskAnswerService, EditHintAnswerService editHintAnswerService, ApproveRegistrationAnswerService approveRegistrationAnswerService, UserService userService1) {
+    public QuestAdminBot(EditQuestAnswerService editQuestAnswerService, UserService userService, EditTaskAnswerService editTaskAnswerService, EditHintAnswerService editHintAnswerService, ApproveRegistrationAnswerService approveRegistrationAnswerService, ConfirmAnswerService confirmAnswerService, ResultQuestGameAnswerService resultQuestGameAnswerService, UserService userService1) {
         this.editQuestAnswerService = editQuestAnswerService;
         this.editTaskAnswerService = editTaskAnswerService;
         this.editHintAnswerService = editHintAnswerService;
         this.approveRegistrationAnswerService = approveRegistrationAnswerService;
+        this.confirmAnswerService = confirmAnswerService;
+        this.resultQuestGameAnswerService = resultQuestGameAnswerService;
         this.userService = userService1;
         userService.getAll().stream().filter(User::isAdmin).forEach(user -> statusMap.put(user.getId(), AdminStatus.EDIT_QUEST));
     }
@@ -77,6 +85,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
             user.setUserName(update.getMessage().getChat().getUserName());
             user.setFirstName(update.getMessage().getChat().getFirstName());
             user.setLastName(update.getMessage().getChat().getLastName());
+            user.setAdmin(true);
             userService.save(user);
             statusMap.put(user.getId(), AdminStatus.EDIT_QUEST);
         }
@@ -97,12 +106,21 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         else if (messageDTO.getText().equals("/registrations")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.REGISTRATIONS);
         }
+        else if (messageDTO.getText().matches(CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")
+                || messageDTO.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")) {
+            statusMap.put(messageDTO.getChatId(), AdminStatus.QUEST_ANSWER);
+        }
+        else if (messageDTO.getText().equals("/quests_results")) {
+            statusMap.put(messageDTO.getChatId(), AdminStatus.QUEST_RESULTS);
+        }
 
         AnswerService answerService = switch (statusMap.get(messageDTO.getChatId())) {
             case EDIT_QUEST -> editQuestAnswerService;
             case EDIT_TASK -> editTaskAnswerService;
             case EDIT_HINT -> editHintAnswerService;
             case REGISTRATIONS -> approveRegistrationAnswerService;
+            case QUEST_ANSWER -> confirmAnswerService;
+            case QUEST_RESULTS -> resultQuestGameAnswerService;
         };
 
         AnswerDTO dto = answerService.getAnswer(messageDTO);

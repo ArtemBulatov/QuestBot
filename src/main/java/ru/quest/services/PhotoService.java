@@ -14,13 +14,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class PhotoService {
-
-    @Value("${admin.bot.token}")
-    private String botToken;
 
     private final PhotoRepository photoRepository;
     private final Gson gson;
@@ -38,7 +36,8 @@ public class PhotoService {
         return photoRepository.findAll();
     }
 
-    public Photo getSavedPhotoFromDto(List<PhotoSize> photoSizeList) {
+    public Photo getSavedPhotoFromDto(List<PhotoSize> photoSizeList, String botToken) {
+        photoSizeList.sort(Comparator.comparing(PhotoSize::getFileSize));
         PhotoSize photoSize = photoSizeList.get(photoSizeList.size()-1);
         Photo photo = new Photo();
 

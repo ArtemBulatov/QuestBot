@@ -5,6 +5,7 @@ import ru.quest.enums.QuestType;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 @Data
@@ -18,4 +19,8 @@ public class Quest {
     private String description;
     private String instruction;
     private LocalDateTime dateTime;
+
+    public String getQuestButton() {
+        return name + " " + dateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+    }
 }

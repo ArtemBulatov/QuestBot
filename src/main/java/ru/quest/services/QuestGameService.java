@@ -35,6 +35,10 @@ public class QuestGameService {
         return questGameRepository.save(questGame);
     }
 
+    public QuestGame get(long questGameId) {
+        return questGameRepository.getById(questGameId);
+    }
+
     public QuestGame get(long questId, long userId) {
         return questGameRepository.findQuestGameByQuestIdAndUserIdAndIsOver(questId, userId, false).orElse(null);
     }
@@ -44,5 +48,9 @@ public class QuestGameService {
         return questGameRepository.findAllByIsOver(false)
                 .stream().filter(questGame -> questGame.getStartTime().toLocalDate().isEqual(dateTime.toLocalDate()))
                 .collect(Collectors.toList());
+    }
+
+    public List<QuestGame> getAllByQuestId(long questId) {
+        return questGameRepository.findAllByQuestId(questId);
     }
 }

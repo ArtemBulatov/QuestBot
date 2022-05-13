@@ -11,6 +11,7 @@ import ru.quest.dto.AnswerDTO;
 import ru.quest.dto.InlineButtonDTO;
 import ru.quest.dto.MessageDTO;
 import ru.quest.enums.AdminStatus;
+import ru.quest.enums.AnswerType;
 import ru.quest.models.Hint;
 import ru.quest.models.Location;
 import ru.quest.models.Quest;
@@ -30,7 +31,7 @@ import static ru.quest.answers.EditHintAnswerService.SHOW_HINTS;
 import static ru.quest.answers.EditQuestAnswerService.THIS_QUEST;
 
 @Service
-public class EditTaskAnswerService implements AnswerService{
+public class EditTaskAnswerService implements AnswerService {
 
     public static final String ADD_NEW_TASK = "Добавить задание";
     public static final String SHOW_TASKS = "Посмотреть задания";
@@ -43,6 +44,7 @@ public class EditTaskAnswerService implements AnswerService{
     private static final String MARK_AS_LAST = "Отметить как последнее";
     private static final String DELETE_TASK = "Удалить задание";
     private static final String ENTER_ANSWER = "Введите ответ";
+    private static final String CHOOSE_ANSWER_TYPE = "Выберите тип ответа на задание";
 
     private static final String DELETE_MESSAGE = "DELETEMESSAGE";
 
@@ -81,8 +83,39 @@ public class EditTaskAnswerService implements AnswerService{
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TEXT)
                 && bufferMapForTasks.containsKey(dto.getChatId())) {
             bufferMapForTasks.get(dto.getChatId()).setText(dto.getText());
-            answerDTO.getMessages().add(getSendMessage(ENTER_ANSWER, dto.getChatId()));
-            lastAnswerService.addLastAnswer(ENTER_ANSWER, dto.getChatId());
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+            answerDTO.getMessages().add(getSendMessage(CHOOSE_ANSWER_TYPE, getAnswerTypesButtons(), dto.getChatId()));
+            lastAnswerService.addLastAnswer(CHOOSE_ANSWER_TYPE, dto.getChatId());
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(CHOOSE_ANSWER_TYPE)
+                && bufferMapForTasks.containsKey(dto.getChatId())) {
+            AnswerType type = AnswerType.getByTypeName(dto.getText());
+            if (type == null) {
+                answerDTO.getMessages().add(getSendMessage("Вы ввели неизвестный тип. Выберите из предложенных вариантов",
+                        getAnswerTypesButtons(), dto.getChatId()));
+                return answerDTO;
+            }
+
+            bufferMapForTasks.get(dto.getChatId()).setAnswerType(type);
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+
+            switch (type) {
+                case TEXT -> {
+                    answerDTO.getMessages().add(getSendMessage(ENTER_ANSWER, dto.getChatId()));
+                    lastAnswerService.addLastAnswer(ENTER_ANSWER, dto.getChatId());
+                }
+                case PHOTO -> {
+                    Task task = bufferMapForTasks.remove(dto.getChatId());
+                    Task savedTask = taskService.save(task);
+
+                    List<Task> tasks = taskService.getAllByQuestId(savedTask.getQuestId());
+                    task = tasks.stream().filter(thisTask -> thisTask.getId() == savedTask.getId()).findFirst().get();
+                    int index = tasks.indexOf(task);
+
+                    sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
+                    lastAnswerService.deleteLastAnswer(dto.getChatId());
+                }
+            }
         }
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_ANSWER)
                 && bufferMapForTasks.containsKey(dto.getChatId())) {
@@ -309,9 +342,20 @@ public class EditTaskAnswerService implements AnswerService{
 
     private String getTaskInfo(Task task, int num, int count) {
         Quest quest = questService.get(task.getQuestId());
+        String answer = "фото";
+        if (task.getAnswerType() == AnswerType.TEXT) {
+            answer = "\"" + ReservedCharacters.replace(task.getAnswer()) + "\"";
+        }
         return "Задания квеста \"*" + quest.getName() + "*\"\n\n" +
                 num + "/" + count +
                 "\n\nТекст задания: \"" + ReservedCharacters.replace(task.getText()) + "\"" +
-                "\n\nОтвет: \"" + ReservedCharacters.replace(task.getAnswer()) + "\"";
+                "\n\nОтвет: " + answer;
+    }
+
+    private String[] getAnswerTypesButtons() {
+        String[] buttons = new String[2];
+        buttons[0] = AnswerType.TEXT.getType();
+        buttons[1] = AnswerType.PHOTO.getType();
+        return buttons;
     }
 }

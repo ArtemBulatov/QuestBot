@@ -25,7 +25,7 @@ import java.util.Map;
 import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
 
 @Service
-public class EditHintAnswerService implements AnswerService{
+public class EditHintAnswerService implements AnswerService {
     public static final String ADD_NEW_HINT = "Добавить подсказку";
     public static final String SHOW_HINTS = "Посмотреть подсказки";
     private static final String ENTER_TEXT = "Введите текст подсказки";

@@ -10,4 +10,5 @@ public interface QuestGameRepository extends JpaRepository<QuestGame, Long> {
     Optional<QuestGame> findQuestGameByQuestIdAndUserIdAndIsOver(long questId, long userId, boolean isOver);
     List<QuestGame> findAllByQuestIdAndUserId(long questId, long userId);
     List<QuestGame> findAllByIsOver(boolean isOver);
+    List<QuestGame> findAllByQuestId(long questId);
 }

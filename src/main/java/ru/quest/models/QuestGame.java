@@ -15,6 +15,7 @@ public class QuestGame {
     private long userId;
     private long questId;
     private int points;
+    private int penalties;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private boolean isOver;

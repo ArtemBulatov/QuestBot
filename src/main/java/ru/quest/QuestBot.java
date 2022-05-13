@@ -72,7 +72,10 @@ public class QuestBot extends TelegramLongPollingBot {
 
         AnswerService answerService = questAnswerService;
         AnswerDTO dto = answerService.getAnswer(messageDTO);
+        sendAnswers(dto);
+    }
 
+    public void sendAnswers(AnswerDTO dto) {
         dto.getDeleteMessages().forEach(this::sendTheDeleteMessage);
         dto.getMessages().forEach(this::sendTheMessage);
         dto.getEditMessages().forEach(this::sendTheEditMessage);

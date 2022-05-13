@@ -4,5 +4,7 @@ public enum AdminStatus {
     EDIT_QUEST,
     EDIT_TASK,
     EDIT_HINT,
-    REGISTRATIONS
+    REGISTRATIONS,
+    QUEST_ANSWER,
+    QUEST_RESULTS
 }

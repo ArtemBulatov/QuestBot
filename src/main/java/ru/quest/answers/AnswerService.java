@@ -1,5 +1,6 @@
 package ru.quest.answers;
 
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -61,4 +62,13 @@ public interface AnswerService {
         deleteMessage.setMessageId(messageId);
         return deleteMessage;
     }
+
+    default AnswerCallbackQuery getAnswerCallbackQuery(String message, int cacheTime, String callbackId) {
+        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
+        answerCallbackQuery.setCallbackQueryId(callbackId);
+        answerCallbackQuery.setText(message);
+        answerCallbackQuery.setCacheTime(cacheTime);
+        return answerCallbackQuery;
+    }
+
 }

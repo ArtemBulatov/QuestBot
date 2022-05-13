@@ -4,6 +4,9 @@ import org.springframework.stereotype.Service;
 import ru.quest.models.Hint;
 import ru.quest.repositories.HintRepository;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,7 +26,9 @@ public class HintService {
     }
 
     public List<Hint> getAllByTaskId(long id) {
-        return hintRepository.findAllByTaskId(id);
+        List<Hint> hints = hintRepository.findAllByTaskId(id);
+        hints.sort(Comparator.comparing(Hint::getOrdinalNumber));
+        return hints;
     }
 
     public void delete(Hint hint) {

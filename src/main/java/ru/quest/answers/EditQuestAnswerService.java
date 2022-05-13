@@ -29,7 +29,7 @@ import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
 import static ru.quest.answers.EditTaskAnswerService.*;
 
 @Service
-public class EditQuestAnswerService implements AnswerService{
+public class EditQuestAnswerService implements AnswerService {
     public static final String CREATE_NEW_QUEST = "Создать новый квест";
     public static final String THIS_QUEST = "thisQuest";
 
@@ -294,6 +294,7 @@ public class EditQuestAnswerService implements AnswerService{
         return num + "/" + count +
                 "\n\nНазвание квеста: *" + quest.getName() + "*" +
                 "\n\nДата и время начала: " + ReservedCharacters.replace(quest.getDateTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))) +
+                "\nТип квеста: " + quest.getType().getType() +
                 "\n\nОписание квеста: \n" + ReservedCharacters.replace(quest.getDescription());
     }
 
