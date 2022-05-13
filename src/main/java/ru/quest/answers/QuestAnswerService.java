@@ -383,7 +383,9 @@ public class QuestAnswerService implements AnswerService {
                 }
                 Photo photo = photoService.getSavedPhotoFromDto(dto.getPhotoSizeList(), botToken);
 
-                adminBot.sendThePhoto(getMessageToCheckPhoto(photo, task, dto.getChatId(), getAdminID()));
+                userService.getAll()
+                        .stream().filter(User::isAdmin)
+                        .forEach(user -> adminBot.sendThePhoto(getMessageToCheckPhoto(photo, task, dto.getChatId(), user.getId())));
                 answerDTO.getMessages().add(getSendMessage("Ваше фото отправлено на проверку", dto.getChatId()));
 
                 lastAnswerService.deleteLastAnswer(dto.getChatId());
@@ -524,9 +526,5 @@ public class QuestAnswerService implements AnswerService {
         buttons.add(new InlineButtonDTO(NOT_CONFIRM_PHOTO, NOT_CONFIRM_PHOTO + ":" + task.getId() + "II" + USER + ":" + userId));
         sendPhoto.setReplyMarkup(ButtonsUtil.getInlineButtons(buttons, 2));
         return sendPhoto;
-    }
-
-    private long getAdminID() {
-        return 711842183;
     }
 }
