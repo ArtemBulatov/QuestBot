@@ -20,6 +20,6 @@ public class TaskCompleting {
     private boolean answered;
     @OneToOne
     private Location userLocation;
-    @OneToMany
+    @ManyToMany
     private List<Hint> usedHints;
 }

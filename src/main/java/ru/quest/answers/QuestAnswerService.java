@@ -9,7 +9,6 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.quest.QuestAdminBot;
-import ru.quest.answers.AnswerService;
 import ru.quest.dto.AnswerDTO;
 import ru.quest.dto.InlineButtonDTO;
 import ru.quest.dto.MessageDTO;
@@ -340,10 +339,6 @@ public class QuestAnswerService implements AnswerService {
             List<Task> tasks = getAvailableTasks(task.getQuestId(), games.get(dto.getChatId()))
                     .stream().filter(task1 -> !task1.isLast()).collect(Collectors.toList());
 
-            if (tasks.isEmpty()) {
-                questGame.setOver(true);
-                questGame.setEndTime(KhantyMansiyskDateTime.now());
-            }
             questGameService.save(questGame);
 
             String message = "";
@@ -353,8 +348,6 @@ public class QuestAnswerService implements AnswerService {
             String[] params = dto.getText().split("II", 2);
             long taskId = Long.parseLong(params[0].split(":", 2)[1]);
             long userId = Long.parseLong(params[1].split(":", 2)[1]);
-
-            Task task = taskService.get(taskId);
 
             QuestGame questGame = games.get(userId);
             TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), taskId);
@@ -366,10 +359,25 @@ public class QuestAnswerService implements AnswerService {
                 questGame.setPoints(questGame.getPoints()+15);
                 questGameService.save(questGame);
 
+                Task task = taskService.get(taskId);
+
                 List<Task> tasks = getAvailableTasks(task.getQuestId(), games.get(userId))
                         .stream().filter(task1 -> !task1.isLast()).toList();
 
                 completeTaskMessage(questGame.getPoints(), "Задание выполнено!", tasks, task.getQuestId(), questGame, userId, answerDTO);
+            }
+        }
+        else if (dto.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")) {
+            String[] params = dto.getText().split("II", 2);
+            long taskId = Long.parseLong(params[0].split(":", 2)[1]);
+            long userId = Long.parseLong(params[1].split(":", 2)[1]);
+
+            QuestGame questGame = games.get(userId);
+            TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), taskId);
+
+            if (!taskCompleting.isAnswered()) {
+                lastAnswerService.addLastAnswer(SEND_ANSWER + ":" + taskId, userId);
+                answerDTO.getMessages().add(getSendMessage("Ваше фото не подходит в качестве ответа к заданию. Попробуйте снова", userId));
             }
         }
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).matches(SEND_ANSWER+ ":\\d+")) {
