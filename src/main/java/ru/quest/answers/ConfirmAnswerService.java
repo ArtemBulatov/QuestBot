@@ -20,9 +20,10 @@ public class ConfirmAnswerService implements AnswerService {
     @Override
     public AnswerDTO getAnswer(MessageDTO dto) {
         AnswerDTO answerDTO = new AnswerDTO();
+        System.out.println(dto.getText());
 
-        if (dto.getText().matches(CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")
-                || dto.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")) {
+        if (dto.getText().matches(CONFIRM_PHOTO + ":\\d+.+" + USER + ":\\d+")
+                || dto.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+.+" + USER + ":\\d+")) {
             questBot.sendAnswers(questAnswerService.getAnswer(dto));
             answerDTO.getMessages().add(getSendMessage("Ваш ответ отправлен участникам", dto.getChatId()));
         }

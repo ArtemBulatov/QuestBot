@@ -12,6 +12,7 @@ public class Hint {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
     private String text;
+    private String hintsTask;
     private int ordinalNumber;
     private long taskId;
 }

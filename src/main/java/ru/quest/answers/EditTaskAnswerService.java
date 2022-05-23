@@ -3,8 +3,6 @@ package ru.quest.answers;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendLocation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.quest.QuestAdminBot;
 import ru.quest.dto.AnswerDTO;
@@ -43,8 +41,12 @@ public class EditTaskAnswerService implements AnswerService {
     private static final String LAST_TASK = "Это последнее задание";
     private static final String MARK_AS_LAST = "Отметить как последнее";
     private static final String DELETE_TASK = "Удалить задание";
-    private static final String ENTER_ANSWER = "Введите ответ";
+    private static final String ENTER_ANSWER = "Введите ответ на задание";
     private static final String CHOOSE_ANSWER_TYPE = "Выберите тип ответа на задание";
+    private static final String ENTER_TRUE_ANSWER_NOTIFICATION = "Введите уведомление о *правильном* ответе";
+    private static final String ENTER_FALSE_ANSWER_NOTIFICATION = "Введите уведомление о *неправильном* ответе";
+    private static final String TRUE_ANSWER_NOTIFICATION_TEXT = "Это правильный ответ!";
+    private static final String FALSE_ANSWER_NOTIFICATION_TEXT = "Неправльный ответ. Попробуйте снова!";
 
     private static final String DELETE_MESSAGE = "DELETEMESSAGE";
 
@@ -58,7 +60,7 @@ public class EditTaskAnswerService implements AnswerService {
     private final EditQuestAnswerService editQuestAnswerService;
     private final LastAnswerService lastAnswerService;
 
-    private final Map<Long, Task> bufferMapForTasks = new HashMap<>();
+    public static final Map<Long, Task> bufferMapForTasks = new HashMap<>();
 
     public EditTaskAnswerService(TaskService taskService, QuestService questService, HintService hintService, LocationService locationService, EditQuestAnswerService editQuestAnswerService, LastAnswerService lastAnswerService) {
         this.taskService = taskService;
@@ -80,56 +82,7 @@ public class EditTaskAnswerService implements AnswerService {
             answerDTO.getMessages().add(getSendMessage(ENTER_TEXT, dto.getChatId()));
             lastAnswerService.addLastAnswer(ENTER_TEXT, dto.getChatId());
         }
-        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TEXT)
-                && bufferMapForTasks.containsKey(dto.getChatId())) {
-            bufferMapForTasks.get(dto.getChatId()).setText(dto.getText());
-            lastAnswerService.deleteLastAnswer(dto.getChatId());
-            answerDTO.getMessages().add(getSendMessage(CHOOSE_ANSWER_TYPE, getAnswerTypesButtons(), dto.getChatId()));
-            lastAnswerService.addLastAnswer(CHOOSE_ANSWER_TYPE, dto.getChatId());
-        }
-        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(CHOOSE_ANSWER_TYPE)
-                && bufferMapForTasks.containsKey(dto.getChatId())) {
-            AnswerType type = AnswerType.getByTypeName(dto.getText());
-            if (type == null) {
-                answerDTO.getMessages().add(getSendMessage("Вы ввели неизвестный тип. Выберите из предложенных вариантов",
-                        getAnswerTypesButtons(), dto.getChatId()));
-                return answerDTO;
-            }
 
-            bufferMapForTasks.get(dto.getChatId()).setAnswerType(type);
-            lastAnswerService.deleteLastAnswer(dto.getChatId());
-
-            switch (type) {
-                case TEXT -> {
-                    answerDTO.getMessages().add(getSendMessage(ENTER_ANSWER, dto.getChatId()));
-                    lastAnswerService.addLastAnswer(ENTER_ANSWER, dto.getChatId());
-                }
-                case PHOTO -> {
-                    Task task = bufferMapForTasks.remove(dto.getChatId());
-                    Task savedTask = taskService.save(task);
-
-                    List<Task> tasks = taskService.getAllByQuestId(savedTask.getQuestId());
-                    task = tasks.stream().filter(thisTask -> thisTask.getId() == savedTask.getId()).findFirst().get();
-                    int index = tasks.indexOf(task);
-
-                    sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
-                    lastAnswerService.deleteLastAnswer(dto.getChatId());
-                }
-            }
-        }
-        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_ANSWER)
-                && bufferMapForTasks.containsKey(dto.getChatId())) {
-            Task task = bufferMapForTasks.remove(dto.getChatId());
-            task.setAnswer(dto.getText());
-            Task savedTask = taskService.save(task);
-
-            List<Task> tasks = taskService.getAllByQuestId(savedTask.getQuestId());
-            task = tasks.stream().filter(thisTask -> thisTask.getId() == savedTask.getId()).findFirst().get();
-            int index = tasks.indexOf(task);
-
-            sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
-            lastAnswerService.deleteLastAnswer(dto.getChatId());
-        }
         else if (dto.getText().matches(QUEST_ID + ":\\d+ " + THIS_TASK + ":\\d+ " + CHANGE_INDEX + ":-?\\d+")) {
             String[] params = dto.getText().split(" ", 3);
             long questId = Long.parseLong(params[0].split(":")[1]);
@@ -179,15 +132,7 @@ public class EditTaskAnswerService implements AnswerService {
             answerDTO.getMessages().add(sendMessage);
             lastAnswerService.addLastAnswer(dto.getText(), dto.getChatId());
         }
-        else if (lastAnswerService.readLastAnswer(dto.getChatId()).matches(ADD_NEW_LOCATION + ":\\d+") && dto.getLocation() != null) {
-            long taskId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":", 2)[1]);
-            Task task = taskService.get(taskId);
-            Location location = locationService.save(dto.getLocation());
-            task.setLocation(location);
-            taskService.save(task);
-            answerDTO.getMessages().add(getSendMessage("Местоположение задания сохранено", dto.getChatId()));
-            sendTaskLocation(task, dto.getChatId(), answerDTO);
-        }
+
         else if (dto.getText().matches(SHOW_LOCATION + ":\\d+")) {
             long taskId = Long.parseLong(dto.getText().split(":", 2)[1]);
             Task task = taskService.get(taskId);
@@ -245,38 +190,86 @@ public class EditTaskAnswerService implements AnswerService {
             sendMessageForTask(tasks, index, dto.getChatId(), 0, answerDTO);
         }
 
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TEXT)
+                && bufferMapForTasks.containsKey(dto.getChatId())) {
+            bufferMapForTasks.get(dto.getChatId()).setText(dto.getText());
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+            answerDTO.getMessages().add(getSendMessage(CHOOSE_ANSWER_TYPE, getAnswerTypesButtons(), dto.getChatId()));
+            lastAnswerService.addLastAnswer(CHOOSE_ANSWER_TYPE, dto.getChatId());
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(CHOOSE_ANSWER_TYPE)
+                && bufferMapForTasks.containsKey(dto.getChatId())) {
+            AnswerType type = AnswerType.getByTypeName(dto.getText());
+            if (type == null) {
+                answerDTO.getMessages().add(getSendMessage("Вы ввели неизвестный тип. Выберите из предложенных вариантов",
+                        getAnswerTypesButtons(), dto.getChatId()));
+                return answerDTO;
+            }
+
+            bufferMapForTasks.get(dto.getChatId()).setAnswerType(type);
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+
+            switch (type) {
+                case TEXT -> {
+                    answerDTO.getMessages().add(getSendMessage(ENTER_ANSWER, dto.getChatId()));
+                    lastAnswerService.addLastAnswer(ENTER_ANSWER, dto.getChatId());
+                }
+                case PHOTO -> {
+                    answerDTO.getMessages().add(getSendMessage(ENTER_TRUE_ANSWER_NOTIFICATION, new String[]{TRUE_ANSWER_NOTIFICATION_TEXT}, true, dto.getChatId()));
+                    lastAnswerService.addLastAnswer(ENTER_TRUE_ANSWER_NOTIFICATION, dto.getChatId());
+                }
+            }
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_ANSWER)
+                && bufferMapForTasks.containsKey(dto.getChatId())) {
+            bufferMapForTasks.get(dto.getChatId()).setAnswer(dto.getText());
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+            answerDTO.getMessages().add(getSendMessage(ENTER_TRUE_ANSWER_NOTIFICATION, new String[]{TRUE_ANSWER_NOTIFICATION_TEXT}, true, dto.getChatId()));
+            lastAnswerService.addLastAnswer(ENTER_TRUE_ANSWER_NOTIFICATION, dto.getChatId());
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TRUE_ANSWER_NOTIFICATION)
+                && bufferMapForTasks.containsKey(dto.getChatId())) {
+            bufferMapForTasks.get(dto.getChatId()).setTrueAnswer(dto.getText());
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+            answerDTO.getMessages().add(getSendMessage(ENTER_FALSE_ANSWER_NOTIFICATION, new String[]{FALSE_ANSWER_NOTIFICATION_TEXT}, true, dto.getChatId()));
+            lastAnswerService.addLastAnswer(ENTER_FALSE_ANSWER_NOTIFICATION, dto.getChatId());
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_FALSE_ANSWER_NOTIFICATION)
+                && bufferMapForTasks.containsKey(dto.getChatId())) {
+            Task task = bufferMapForTasks.remove(dto.getChatId());
+            task.setFalseAnswer(dto.getText());
+            Task savedTask = taskService.save(task);
+
+            List<Task> tasks = taskService.getAllByQuestId(savedTask.getQuestId());
+            task = tasks.stream().filter(thisTask -> thisTask.getId() == savedTask.getId()).findFirst().get();
+            int index = tasks.indexOf(task);
+
+            sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
+            lastAnswerService.deleteLastAnswer(dto.getChatId());
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).matches(ADD_NEW_LOCATION + ":\\d+") && dto.getLocation() != null) {
+            long taskId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":", 2)[1]);
+            Task task = taskService.get(taskId);
+            Location location = locationService.save(dto.getLocation());
+            task.setLocation(location);
+            taskService.save(task);
+            answerDTO.getMessages().add(getSendMessage("Местоположение задания сохранено", dto.getChatId()));
+            sendTaskLocation(task, dto.getChatId(), answerDTO);
+        }
+
         return answerDTO;
     }
 
     private void sendMessageForTask(List<Task> tasks, int index, long chatId, int messageId, AnswerDTO answerDTO) {
         Task task = tasks.get(index);
+        String taskInfo = getTaskInfo(task, index+1, tasks.size());
+
         if (messageId == 0) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(String.valueOf(chatId));
-            sendMessage.setText(getTaskInfo(task, index+1, tasks.size()));
-            sendMessage.setParseMode("MarkdownV2");
-            sendMessage.setReplyMarkup(getInlineKeyboardMarkup(task));
-
-            answerDTO.getMessages().add(sendMessage);
-            return;
+            answerDTO.getMessages().add(getSendMessage(taskInfo, true, getInlineKeyboardMarkup(task), chatId));
         }
-
-        EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(String.valueOf(chatId));
-        editMessageText.setMessageId(messageId);
-        editMessageText.setText(getTaskInfo(task, index+1, tasks.size()));
-        editMessageText.setParseMode("MarkdownV2");
-        editMessageText.setReplyMarkup(getInlineKeyboardMarkup(task));
-
-        answerDTO.getEditMessages().add(editMessageText);
-    }
-
-    private void editButtonsForTaskMessage(List<Task> tasks, int index, long chatId, int messageId, AnswerDTO answerDTO) {
-        EditMessageReplyMarkup editMessageReplyMarkup = new EditMessageReplyMarkup();
-        editMessageReplyMarkup.setChatId(String.valueOf(chatId));
-        editMessageReplyMarkup.setMessageId(messageId);
-        editMessageReplyMarkup.setReplyMarkup(getInlineKeyboardMarkup(tasks.get(index)));
-        answerDTO.getEditMessageReplyMarkups().add(editMessageReplyMarkup);
+        else {
+            answerDTO.getEditMessages().add(getEditMessageText(taskInfo, getInlineKeyboardMarkup(task),true, chatId, messageId));
+        }
     }
 
     private void sendTaskLocation(Task task, long chatId, AnswerDTO answerDTO) {
@@ -349,7 +342,9 @@ public class EditTaskAnswerService implements AnswerService {
         return "Задания квеста \"*" + quest.getName() + "*\"\n\n" +
                 num + "/" + count +
                 "\n\nТекст задания: \"" + ReservedCharacters.replace(task.getText()) + "\"" +
-                "\n\nОтвет: " + answer;
+                "\n\nОтвет: " + ReservedCharacters.replace(answer) +
+                "\n\nУведомление о правильном ответе: \"" + ReservedCharacters.replace(task.getTrueAnswer()) + "\"" +
+                "\n\nУведомление о неправильном ответе: \"" + ReservedCharacters.replace(task.getFalseAnswer()) + "\"";
     }
 
     private String[] getAnswerTypesButtons() {

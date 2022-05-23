@@ -4,11 +4,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import ru.quest.QuestBot;
+import ru.quest.answers.QuestAnswerService;
 import ru.quest.dto.InlineButtonDTO;
 import ru.quest.enums.RegistrationStatus;
 import ru.quest.models.Quest;
 import ru.quest.utils.ButtonsUtil;
 import ru.quest.utils.KhantyMansiyskDateTime;
+import ru.quest.utils.ReservedCharacters;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -22,11 +24,13 @@ import static ru.quest.answers.QuestAnswerService.GET_TASKS;
 public class NotificationService {
     private final QuestService questService;
     private final RegistrationService registrationService;
+    private final QuestGameService questGameService;
     private final QuestBot questBot;
 
-    public NotificationService(QuestService questService, RegistrationService registrationService, QuestBot questBot) {
+    public NotificationService(QuestService questService, RegistrationService registrationService, QuestGameService questGameService, QuestBot questBot) {
         this.questService = questService;
         this.registrationService = registrationService;
+        this.questGameService = questGameService;
         this.questBot = questBot;
     }
 
@@ -38,18 +42,17 @@ public class NotificationService {
             return;
         }
 
+        try {
+            Thread.sleep((60 - dateTime.getSecond()) * 1000L);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         quests.stream().filter(quest -> quest.getDateTime().isAfter(dateTime))
                 .forEach(quest -> {
                     Duration duration = Duration.between(dateTime, quest.getDateTime());
                     long minutes = duration.toMinutes();
-                    if (minutes == 0 || minutes == 60 || minutes == 60*24) {
-                        try {
-                            Thread.sleep(duration.toSecondsPart() * 1000L);
-                        }
-                        catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
                     if (minutes == 0) {
                         registrationService.getAllByQuestId(quest.getId())
                                 .stream().filter(registration -> registration.isConfirmed() && registration.getStatus() == RegistrationStatus.APPROVED)
@@ -93,12 +96,35 @@ public class NotificationService {
                                 });
                     }
         });
+
+        questGameService.getActiveQuestGames().forEach(questGame -> {
+            Quest quest = questService.get(questGame.getQuestId());
+            Duration durationToEndQuest = Duration.between(dateTime, quest.getDateTime().plusHours(4));
+            long minutes = durationToEndQuest.toMinutes();
+            if (minutes == 30 && quest.getNotificationBeforeEnd() != null) {
+                questBot.sendTheMessage(getSendMessage(quest.getNotificationBeforeEnd(), questGame.getUserId()));
+            }
+            else if (minutes == 0) {
+                questGame.setEndTime(KhantyMansiyskDateTime.now());
+                questGame.setOver(true);
+                questGameService.save(questGame);
+                questBot.sendTheMessage(getSendMessage("Время отведённое на квест истекло!", questGame.getUserId()));
+                questBot.sendTheMessage(getSendMessage(QuestAnswerService.getQuestGameResultMessage(questGame, quest),
+                        true, questGame.getUserId()));
+            }
+        });
+
     }
 
     private SendMessage getSendMessage(String text, long chatId) {
+        return getSendMessage(text, false, chatId);
+    }
+
+    private SendMessage getSendMessage(String text, boolean markdown, long chatId) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(text);
+        sendMessage.enableMarkdownV2(markdown);
         return sendMessage;
     }
 }

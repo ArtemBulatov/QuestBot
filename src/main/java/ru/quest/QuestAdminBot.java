@@ -37,6 +37,9 @@ public class QuestAdminBot extends TelegramLongPollingBot {
 
     public static final Map<Long, AdminStatus> statusMap = new HashMap<>();
 
+    @Value("${admin.password}")
+    private String adminPassword;
+
     @Value("${admin.bot.name}")
     private String botUserName;
 
@@ -76,18 +79,18 @@ public class QuestAdminBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         MessageDTO messageDTO = MessageDtoUtil.get(update);
 
-        if (messageDTO.getText().equals("/start")) {
-            User user = userService.find(messageDTO.getChatId());
-            if (user == null) {
-                user = new User();
-                user.setId(messageDTO.getChatId());
+        if (messageDTO.getText().contains("/start ")) {
+            String password = messageDTO.getText().split(" ", 2)[1];
+            if (password.equals(adminPassword)) {
+                User user = userService.checkUser(update);
+                user.setAdmin(true);
+                userService.save(user);
+                statusMap.put(user.getId(), AdminStatus.EDIT_QUEST);
             }
-            user.setUserName(update.getMessage().getChat().getUserName());
-            user.setFirstName(update.getMessage().getChat().getFirstName());
-            user.setLastName(update.getMessage().getChat().getLastName());
-            user.setAdmin(true);
-            userService.save(user);
-            statusMap.put(user.getId(), AdminStatus.EDIT_QUEST);
+        }
+
+        if (!statusMap.containsKey(messageDTO.getChatId())) {
+            return;
         }
 
         if (messageDTO.getText().equals("/quests")
@@ -106,8 +109,8 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         else if (messageDTO.getText().equals("/registrations")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.REGISTRATIONS);
         }
-        else if (messageDTO.getText().matches(CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")
-                || messageDTO.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+II" + USER + ":\\d+")) {
+        else if (messageDTO.getText().matches(CONFIRM_PHOTO + ":\\d+.+" + USER + ":\\d+")
+                || messageDTO.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+.+" + USER + ":\\d+")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.QUEST_ANSWER);
         }
         else if (messageDTO.getText().equals("/quests_results")) {

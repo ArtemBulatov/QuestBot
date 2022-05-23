@@ -1,8 +1,6 @@
 package ru.quest.answers;
 
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.quest.dto.AnswerDTO;
 import ru.quest.dto.InlineButtonDTO;
@@ -17,6 +15,7 @@ import ru.quest.services.QuestService;
 import ru.quest.services.RegistrationService;
 import ru.quest.services.UserService;
 import ru.quest.utils.ButtonsUtil;
+import ru.quest.utils.ReservedCharacters;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -64,7 +63,6 @@ public class ResultQuestGameAnswerService implements AnswerService {
             sendMessageForQuestGame(games, 0, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
         else if (dto.getText().matches(QUEST_GAME + ":\\d+ " + CHANGE_INDEX + ":-?\\d+")) {
-            System.out.println(dto.getText());
             String[] params = dto.getText().split(" ", 2);
             long questGameId = Long.parseLong(params[0].split(":")[1]);
             int change = Integer.parseInt(params[1].split(":")[1]);
@@ -90,23 +88,14 @@ public class ResultQuestGameAnswerService implements AnswerService {
     }
     private void sendMessageForQuestGame(List<QuestGame> games, int index, long chatId, int messageId, AnswerDTO answerDTO) {
         QuestGame questGame = games.get(index);
+        String questGameInfo = getQuestGameInfo(questGame, index+1, games.size());
+
         if (messageId == 0) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(String.valueOf(chatId));
-            sendMessage.setText(getQuestGameInfo(questGame, index+1, games.size()));
-            sendMessage.setReplyMarkup(getInlineKeyboardMarkup(questGame));
-
-            answerDTO.getMessages().add(sendMessage);
-            return;
+            answerDTO.getMessages().add(getSendMessage(questGameInfo, false, getInlineKeyboardMarkup(questGame), chatId));
         }
-
-        EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(String.valueOf(chatId));
-        editMessageText.setMessageId(messageId);
-        editMessageText.setText(getQuestGameInfo(questGame, index+1, games.size()));
-        editMessageText.setReplyMarkup(getInlineKeyboardMarkup(questGame));
-
-        answerDTO.getEditMessages().add(editMessageText);
+        else {
+            answerDTO.getEditMessages().add(getEditMessageText(questGameInfo, getInlineKeyboardMarkup(questGame),false, chatId, messageId));
+        }
     }
 
     private String getQuestGameInfo(QuestGame questGame, int num, int count) {
@@ -125,9 +114,9 @@ public class ResultQuestGameAnswerService implements AnswerService {
                 "\n\nПользователь: " + user.getFirstName() + " " + user.getLastName() + " (@" + user.getUserName() + ")" +
                 teamInfo +
                 "\n\nВремя выполнения квеста: "
-                + duration.toHoursPart() + "ч "
-                + duration.toMinutesPart() + "мин "
-                + duration.toSecondsPart() + "сек"
+                + duration.toHoursPart() + " ч  "
+                + duration.toMinutesPart() + " мин  "
+                + duration.toSecondsPart() + " сек"
                 + "\nНабрано очков: " + questGame.getPoints()
                 + "\nНабрано штрафов: " + questGame.getPenalties()
                 + "\nРезультат: "

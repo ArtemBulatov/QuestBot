@@ -131,23 +131,14 @@ public class ApproveRegistrationAnswerService implements AnswerService {
 
     private void sendMessageForRegistration(List<Registration> registrations, int index, long chatId, int messageId, AnswerDTO answerDTO) {
         Registration registration = registrations.get(index);
+        String registrationInfo = getRegistrationInfo(registration, index+1, registrations.size());
+
         if (messageId == 0) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(String.valueOf(chatId));
-            sendMessage.setText(getRegistrationInfo(registration, index+1, registrations.size()));
-            sendMessage.setReplyMarkup(getInlineKeyboardMarkup(registration));
-
-            answerDTO.getMessages().add(sendMessage);
-            return;
+            answerDTO.getMessages().add(getSendMessage(registrationInfo, true, getInlineKeyboardMarkup(registration), chatId));
         }
-
-        EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(String.valueOf(chatId));
-        editMessageText.setMessageId(messageId);
-        editMessageText.setText(getRegistrationInfo(registration, index+1, registrations.size()));
-        editMessageText.setReplyMarkup(getInlineKeyboardMarkup(registration));
-
-        answerDTO.getEditMessages().add(editMessageText);
+        else {
+            answerDTO.getEditMessages().add(getEditMessageText(registrationInfo, getInlineKeyboardMarkup(registration),true, chatId, messageId));
+        }
     }
 
     private InlineKeyboardMarkup getInlineKeyboardMarkup(Registration registration) {

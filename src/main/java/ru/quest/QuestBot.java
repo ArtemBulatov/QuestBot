@@ -59,15 +59,7 @@ public class QuestBot extends TelegramLongPollingBot {
         MessageDTO messageDTO = MessageDtoUtil.get(update);
 
         if (messageDTO.getText().equals("/start")) {
-            User user = userService.find(messageDTO.getChatId());
-            if (user == null) {
-                user = new User();
-                user.setId(messageDTO.getChatId());
-            }
-            user.setUserName(update.getMessage().getChat().getUserName());
-            user.setFirstName(update.getMessage().getChat().getFirstName());
-            user.setLastName(update.getMessage().getChat().getLastName());
-            userService.save(user);
+            userService.checkUser(update);
         }
 
         AnswerService answerService = questAnswerService;

@@ -15,6 +15,8 @@ public class Task {
     private String text;
     private AnswerType answerType;
     private String answer;
+    private String trueAnswer;
+    private String falseAnswer;
     private boolean isLast;
     private long questId;
     @OneToOne

@@ -18,6 +18,7 @@ public class Quest {
     private String name;
     private String description;
     private String instruction;
+    private String notificationBeforeEnd;
     private LocalDateTime dateTime;
 
     public String getQuestButton() {
