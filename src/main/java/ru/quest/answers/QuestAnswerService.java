@@ -437,7 +437,7 @@ public class QuestAnswerService implements AnswerService {
                 return answerDTO;
             }
 
-            if (!dto.getText().equals(task.getAnswer())) {
+            if (!dto.getText().toLowerCase(Locale.ROOT).equals(task.getAnswer().toLowerCase(Locale.ROOT))) {
                 answerDTO.getMessages().add(getSendMessage(task.getFalseAnswer(), dto.getChatId()));
                 return answerDTO;
             }
