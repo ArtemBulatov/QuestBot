@@ -21,4 +21,6 @@ public class Task {
     private long questId;
     @OneToOne
     private Location location;
+    @OneToOne
+    private Photo photo;
 }

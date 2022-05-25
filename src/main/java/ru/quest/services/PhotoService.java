@@ -32,6 +32,10 @@ public class PhotoService {
         return photoRepository.save(photo);
     }
 
+    public void delete(Photo photo) {
+        photoRepository.delete(photo);
+    }
+
     public List<Photo> getAll() {
         return photoRepository.findAll();
     }

@@ -2,16 +2,19 @@ package ru.quest.answers;
 
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import ru.quest.dto.AnswerDTO;
 import ru.quest.dto.InlineButtonDTO;
 import ru.quest.dto.MessageDTO;
+import ru.quest.models.Photo;
 import ru.quest.utils.ButtonsUtil;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 public interface AnswerService {
@@ -84,6 +87,17 @@ public interface AnswerService {
         answerCallbackQuery.setText(message);
         answerCallbackQuery.setCacheTime(cacheTime);
         return answerCallbackQuery;
+    }
+
+    default SendPhoto getSendPhoto(String message, Photo photo, boolean markDown, ReplyKeyboard replyKeyboard, long chatId) {
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(String.valueOf(chatId));
+        sendPhoto.setPhoto(new InputFile(new ByteArrayInputStream(photo.getBytes()), photo.getName()));
+        sendPhoto.setCaption(message);
+        if (markDown) sendPhoto.setParseMode("MarkDownV2");
+        sendPhoto.setReplyMarkup(replyKeyboard);
+
+        return sendPhoto;
     }
 
 }

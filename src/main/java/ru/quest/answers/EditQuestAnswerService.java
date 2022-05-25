@@ -280,12 +280,10 @@ public class EditQuestAnswerService implements AnswerService {
         Quest quest = quests.get(index);
         String questInfo = getQuestInfo(quest, index+1, quests.size());
 
-        if (messageId == 0) {
-            answerDTO.getMessages().add(getSendMessage(questInfo, true, getInlineKeyboardMarkup(quest), chatId));
+        if (messageId != 0) {
+            answerDTO.getDeleteMessages().add(getDeleteMessage(chatId, messageId));
         }
-        else {
-            answerDTO.getEditMessages().add(getEditMessageText(questInfo, getInlineKeyboardMarkup(quest),true, chatId, messageId));
-        }
+        answerDTO.getMessages().add(getSendMessage(questInfo, true, getInlineKeyboardMarkup(quest), chatId));
     }
 
     private InlineKeyboardMarkup getInlineKeyboardMarkup(Quest quest) {

@@ -502,11 +502,14 @@ public class QuestAnswerService implements AnswerService {
         Task task = tasks.get(index);
         String taskInfo = getTaskInfo(game, task, index+1, tasks.size());
 
-        if (messageId == 0) {
+        if (messageId != 0) {
+            answerDTO.getDeleteMessages().add(getDeleteMessage(chatId, messageId));
+        }
+        if (task.getPhoto() == null) {
             answerDTO.getMessages().add(getSendMessage(taskInfo, true, getInlineKeyboardMarkup(task), chatId));
         }
         else {
-            answerDTO.getEditMessages().add(getEditMessageText(taskInfo, getInlineKeyboardMarkup(task),true, chatId, messageId));
+            answerDTO.getPhotoMessages().add(getSendPhoto(taskInfo, task.getPhoto(), true, getInlineKeyboardMarkup(task), chatId));
         }
     }
 

@@ -1,8 +1,10 @@
 package ru.quest.answers;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendLocation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.quest.QuestAdminBot;
 import ru.quest.dto.AnswerDTO;
@@ -10,10 +12,7 @@ import ru.quest.dto.InlineButtonDTO;
 import ru.quest.dto.MessageDTO;
 import ru.quest.enums.AdminStatus;
 import ru.quest.enums.AnswerType;
-import ru.quest.models.Hint;
-import ru.quest.models.Location;
-import ru.quest.models.Quest;
-import ru.quest.models.Task;
+import ru.quest.models.*;
 import ru.quest.services.*;
 import ru.quest.utils.ButtonsUtil;
 import ru.quest.utils.ReservedCharacters;
@@ -38,6 +37,10 @@ public class EditTaskAnswerService implements AnswerService {
     public static final String SHOW_LOCATION = "Посмотреть местоположение";
     public static final String DELETE_LOCATION = "Удалить местоположение";
 
+    private static final String ADD_NEW_PHOTO = "Добавить фото";
+    private static final String DELETE_PHOTO = "Удалить фото";
+    private static final String SEND_PHOTO = "Отправьте фото";
+
     private static final String LAST_TASK = "Это последнее задание";
     private static final String MARK_AS_LAST = "Отметить как последнее";
     private static final String DELETE_TASK = "Удалить задание";
@@ -57,22 +60,30 @@ public class EditTaskAnswerService implements AnswerService {
     private final QuestService questService;
     private final HintService hintService;
     private final LocationService locationService;
+    private final PhotoService photoService;
     private final EditQuestAnswerService editQuestAnswerService;
     private final LastAnswerService lastAnswerService;
 
     public static final Map<Long, Task> bufferMapForTasks = new HashMap<>();
 
-    public EditTaskAnswerService(TaskService taskService, QuestService questService, HintService hintService, LocationService locationService, EditQuestAnswerService editQuestAnswerService, LastAnswerService lastAnswerService) {
+    @Value("${admin.bot.token}")
+    private String botToken;
+
+    public EditTaskAnswerService(TaskService taskService, QuestService questService, HintService hintService, LocationService locationService, PhotoService photoService, EditQuestAnswerService editQuestAnswerService, LastAnswerService lastAnswerService) {
         this.taskService = taskService;
         this.questService = questService;
         this.hintService = hintService;
         this.locationService = locationService;
+        this.photoService = photoService;
         this.editQuestAnswerService = editQuestAnswerService;
         this.lastAnswerService = lastAnswerService;
     }
 
     @Override
     public AnswerDTO getAnswer(MessageDTO dto) {
+
+        System.out.println(dto.getText());
+
         AnswerDTO answerDTO = new AnswerDTO();
         if (dto.getText().matches(ADD_NEW_TASK + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":", 2)[1]);
@@ -189,6 +200,42 @@ public class EditTaskAnswerService implements AnswerService {
             answerDTO.getDeleteMessages().add(getDeleteMessage(dto.getChatId(), dto.getMessageId()));
             sendMessageForTask(tasks, index, dto.getChatId(), 0, answerDTO);
         }
+        else if (dto.getText().matches(DELETE_PHOTO + ":\\d+")) {
+            long taskId = Long.parseLong(dto.getText().split(":", 2)[1]);
+            Task task = taskService.get(taskId);
+            Photo photo = task.getPhoto();
+
+            task.setPhoto(null);
+            taskService.save(task);
+
+            photoService.delete(photo);
+
+            List<Task> tasks = taskService.getAllByQuestId(task.getQuestId());
+            Task taskForIndex = tasks.stream().filter(thisTask -> thisTask.getId() == task.getId()).findFirst().get();
+            int index = tasks.indexOf(taskForIndex);
+
+            sendMessageForTask(tasks, index, dto.getChatId(), 0, answerDTO);
+        }
+        else if (dto.getText().matches(ADD_NEW_PHOTO + ":\\d+")) {
+            System.out.println(dto.getText());
+            long taskId = Long.parseLong(dto.getText().split(":", 2)[1]);
+            lastAnswerService.addLastAnswer(SEND_PHOTO + ":" + taskId, dto.getChatId());
+            answerDTO.getMessages().add(getSendMessage(SEND_PHOTO, dto.getChatId()));
+        }
+
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).matches(SEND_PHOTO + ":\\d+")
+                && !dto.getPhotoSizeList().isEmpty()) {
+            long taskId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":", 2)[1]);
+            Task task = taskService.get(taskId);
+            task.setPhoto(photoService.getSavedPhotoFromDto(dto.getPhotoSizeList(), botToken));
+            taskService.save(task);
+
+            List<Task> tasks = taskService.getAllByQuestId(task.getQuestId());
+            Task taskForIndex = tasks.stream().filter(thisTask -> thisTask.getId() == task.getId()).findFirst().get();
+            int index = tasks.indexOf(taskForIndex);
+
+            sendMessageForTask(tasks, index, dto.getChatId(), 0, answerDTO);
+        }
 
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TEXT)
                 && bufferMapForTasks.containsKey(dto.getChatId())) {
@@ -263,12 +310,16 @@ public class EditTaskAnswerService implements AnswerService {
     private void sendMessageForTask(List<Task> tasks, int index, long chatId, int messageId, AnswerDTO answerDTO) {
         Task task = tasks.get(index);
         String taskInfo = getTaskInfo(task, index+1, tasks.size());
+        InlineKeyboardMarkup markup = getInlineKeyboardMarkup(task);
 
-        if (messageId == 0) {
-            answerDTO.getMessages().add(getSendMessage(taskInfo, true, getInlineKeyboardMarkup(task), chatId));
+        if (messageId != 0) {
+            answerDTO.getDeleteMessages().add(getDeleteMessage(chatId, messageId));
+        }
+        if (task.getPhoto() == null) {
+            answerDTO.getMessages().add(getSendMessage(taskInfo, true, markup, chatId));
         }
         else {
-            answerDTO.getEditMessages().add(getEditMessageText(taskInfo, getInlineKeyboardMarkup(task),true, chatId, messageId));
+            answerDTO.getPhotoMessages().add(getSendPhoto(taskInfo, task.getPhoto(), true, markup, chatId));
         }
     }
 
@@ -289,6 +340,13 @@ public class EditTaskAnswerService implements AnswerService {
         InlineKeyboardMarkup inlineKeyboardMarkup =new InlineKeyboardMarkup();
 
         List<InlineButtonDTO> buttonDTOList = new ArrayList<>();
+
+        if (task.getPhoto() == null) {
+            buttonDTOList.add(new InlineButtonDTO(ADD_NEW_PHOTO, ADD_NEW_PHOTO + ":" + task.getId()));
+        }
+        else {
+            buttonDTOList.add(new InlineButtonDTO(DELETE_PHOTO, DELETE_PHOTO + ":" + task.getId()));
+        }
 
         if (task.isLast()) {
             buttonDTOList.add(new InlineButtonDTO(LAST_TASK, LAST_TASK));

@@ -172,12 +172,10 @@ public class EditHintAnswerService implements AnswerService {
         Hint hint = hints.get(index);
         String hintInfo = getHintInfo(hint, index+1, hints.size());
 
-        if (messageId == 0) {
-            answerDTO.getMessages().add(getSendMessage(hintInfo, true, getInlineKeyboardMarkup(hint), chatId));
+        if (messageId != 0) {
+            answerDTO.getDeleteMessages().add(getDeleteMessage(chatId, messageId));
         }
-        else {
-            answerDTO.getEditMessages().add(getEditMessageText(hintInfo, getInlineKeyboardMarkup(hint),true, chatId, messageId));
-        }
+        answerDTO.getMessages().add(getSendMessage(hintInfo, true, getInlineKeyboardMarkup(hint), chatId));
     }
 
     private void sendMessageForHintsTask(Hint hint, long chatId, int messageId, AnswerDTO answerDTO) {
