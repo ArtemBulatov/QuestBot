@@ -35,8 +35,8 @@ public class TaskService {
     public void delete(Task task) {
         hintService.deleteAllByTaskId(task.getId());
         taskRepository.delete(task);
-        photoService.delete(task.getPhoto());
-        locationService.delete(task.getLocation());
+        if (task.getPhoto() != null) photoService.delete(task.getPhoto());
+        if (task.getLocation() != null) locationService.delete(task.getLocation());
     }
 
     public void deleteAllByQuestId(long id) {
