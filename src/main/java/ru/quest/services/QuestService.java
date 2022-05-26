@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import ru.quest.models.Quest;
 import ru.quest.repositories.QuestRepository;
@@ -11,7 +12,7 @@ public class QuestService {
     private final QuestRepository questRepository;
     private final TaskService taskService;
 
-    public QuestService(QuestRepository questRepository, TaskService taskService) {
+    public QuestService(QuestRepository questRepository, @Lazy TaskService taskService) {
         this.questRepository = questRepository;
         this.taskService = taskService;
     }

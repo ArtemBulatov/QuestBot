@@ -96,6 +96,10 @@ public class QuestAnswerService implements AnswerService {
         AnswerDTO answerDTO = new AnswerDTO();
         if (dto.getText().equals("/quests")) {
             List<Quest> quests = questService.getaAll();
+            if (quests.isEmpty()) {
+                answerDTO.getMessages().add(getSendMessage("Квестов пока нет", dto.getChatId()));
+                return answerDTO;
+            }
             String[] buttons = new String[quests.size()];
             for (int i = 0; i < quests.size(); i++) {
                 buttons[i] = quests.get(i).getQuestButton();

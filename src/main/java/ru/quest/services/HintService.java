@@ -4,8 +4,6 @@ import org.springframework.stereotype.Service;
 import ru.quest.models.Hint;
 import ru.quest.repositories.HintRepository;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -36,6 +34,6 @@ public class HintService {
     }
 
     public void deleteAllByTaskId(long id) {
-        hintRepository.deleteAllByTaskId(id);
+        hintRepository.findAllByTaskId(id).forEach(this::delete);
     }
 }

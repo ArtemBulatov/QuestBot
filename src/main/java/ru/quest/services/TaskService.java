@@ -10,10 +10,14 @@ import java.util.List;
 public class TaskService {
     private final TaskRepository taskRepository;
     private final HintService hintService;
+    private final PhotoService photoService;
+    private final LocationService locationService;
 
-    public TaskService(TaskRepository taskRepository, HintService hintService) {
+    public TaskService(TaskRepository taskRepository, HintService hintService, PhotoService photoService, LocationService locationService) {
         this.taskRepository = taskRepository;
         this.hintService = hintService;
+        this.photoService = photoService;
+        this.locationService = locationService;
     }
 
     public Task save(Task task) {
@@ -24,10 +28,6 @@ public class TaskService {
         return taskRepository.getById(id);
     }
 
-    public List<Task> getAll() {
-        return taskRepository.findAll();
-    }
-
     public List<Task> getAllByQuestId(long id) {
         return taskRepository.findAllByQuestId(id);
     }
@@ -35,9 +35,11 @@ public class TaskService {
     public void delete(Task task) {
         hintService.deleteAllByTaskId(task.getId());
         taskRepository.delete(task);
+        photoService.delete(task.getPhoto());
+        locationService.delete(task.getLocation());
     }
 
     public void deleteAllByQuestId(long id) {
-        taskRepository.deleteAllByQuestId(id);
+        taskRepository.findAllByQuestId(id).forEach(this::delete);
     }
 }
