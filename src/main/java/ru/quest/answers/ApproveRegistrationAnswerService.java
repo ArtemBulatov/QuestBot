@@ -17,6 +17,7 @@ import ru.quest.services.QuestService;
 import ru.quest.services.RegistrationService;
 import ru.quest.services.UserService;
 import ru.quest.utils.ButtonsUtil;
+import ru.quest.utils.ReservedCharacters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,10 +135,10 @@ public class ApproveRegistrationAnswerService implements AnswerService {
         String registrationInfo = getRegistrationInfo(registration, index+1, registrations.size());
 
         if (messageId == 0) {
-            answerDTO.getMessages().add(getSendMessage(registrationInfo, true, getInlineKeyboardMarkup(registration), chatId));
+            answerDTO.getMessages().add(getSendMessage(registrationInfo, false, getInlineKeyboardMarkup(registration), chatId));
         }
         else {
-            answerDTO.getEditMessages().add(getEditMessageText(registrationInfo, getInlineKeyboardMarkup(registration),true, chatId, messageId));
+            answerDTO.getEditMessages().add(getEditMessageText(registrationInfo, getInlineKeyboardMarkup(registration),false, chatId, messageId));
         }
     }
 
