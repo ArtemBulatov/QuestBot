@@ -80,9 +80,6 @@ public class EditTaskAnswerService implements AnswerService {
 
     @Override
     public AnswerDTO getAnswer(MessageDTO dto) {
-
-        System.out.println(dto.getText());
-
         AnswerDTO answerDTO = new AnswerDTO();
         if (dto.getText().matches(ADD_NEW_TASK + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":", 2)[1]);
@@ -216,7 +213,6 @@ public class EditTaskAnswerService implements AnswerService {
             sendMessageForTask(tasks, index, dto.getChatId(), 0, answerDTO);
         }
         else if (dto.getText().matches(ADD_NEW_PHOTO + ":\\d+")) {
-            System.out.println(dto.getText());
             long taskId = Long.parseLong(dto.getText().split(":", 2)[1]);
             lastAnswerService.addLastAnswer(SEND_PHOTO + ":" + taskId, dto.getChatId());
             answerDTO.getMessages().add(getSendMessage(SEND_PHOTO, dto.getChatId()));

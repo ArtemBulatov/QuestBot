@@ -60,6 +60,11 @@ public class ResultQuestGameAnswerService implements AnswerService {
                     .filter(quest -> quest.getQuestButton().equals(dto.getText())).findFirst().get();
             List<QuestGame> games = questGameService.getAllByQuestId(checkedQuest.getId());
 
+            if (games.isEmpty()) {
+                answerDTO.getMessages().add(getSendMessage("Нет результатов прохождения данного квеста", dto.getChatId()));
+                return answerDTO;
+            }
+
             sendMessageForQuestGame(games, 0, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
         else if (dto.getText().matches(QUEST_GAME + ":\\d+ " + CHANGE_INDEX + ":-?\\d+")) {
