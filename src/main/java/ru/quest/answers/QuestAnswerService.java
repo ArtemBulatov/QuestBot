@@ -94,7 +94,11 @@ public class QuestAnswerService implements AnswerService {
     @Override
     public AnswerDTO getAnswer(MessageDTO dto) {
         AnswerDTO answerDTO = new AnswerDTO();
-        if (dto.getText().equals("/quests")) {
+
+        if(dto.getText().contains("/start")) {
+            answerDTO.getMessages().add(getSendMessage("Для работы с ботом используйте меню", dto.getChatId()));
+        }
+        else if (dto.getText().equals("/quests")) {
             List<Quest> quests = questService.getaAll();
             if (quests.isEmpty()) {
                 answerDTO.getMessages().add(getSendMessage("Квестов пока нет", dto.getChatId()));
