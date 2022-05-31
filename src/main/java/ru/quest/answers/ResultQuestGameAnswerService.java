@@ -15,9 +15,9 @@ import ru.quest.services.QuestService;
 import ru.quest.services.RegistrationService;
 import ru.quest.services.UserService;
 import ru.quest.utils.ButtonsUtil;
-import ru.quest.utils.ReservedCharacters;
 
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,13 +118,15 @@ public class ResultQuestGameAnswerService implements AnswerService {
                 "\n\n" + num + "/" + count +
                 "\n\nПользователь: " + user.getFirstName() + " " + user.getLastName() + " (@" + user.getUserName() + ")" +
                 teamInfo +
-                "\n\nВремя выполнения квеста: "
+                "\n\nВремя начала прохождения квеста: " + questGame.getStartTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")) +
+                "\nВремя окончания прохождения квеста: " + questGame.getEndTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")) +
+                "\n\nВремя прохождения квеста: "
                 + duration.toHoursPart() + " ч  "
                 + duration.toMinutesPart() + " мин  "
                 + duration.toSecondsPart() + " сек"
-                + "\nНабрано очков: " + questGame.getPoints()
+                + "\n\nНабрано очков: " + questGame.getPoints()
                 + "\nНабрано штрафов: " + questGame.getPenalties()
-                + "\nРезультат: "
+                + "\n\nРезультат: "
                 + result.toHoursPart() + " ч  "
                 + result.toMinutesPart() + " мин  "
                 + result.toSecondsPart() + " сек";

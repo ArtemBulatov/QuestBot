@@ -135,7 +135,7 @@ public class EditTaskAnswerService implements AnswerService {
         }
         else if(dto.getText().matches(ADD_NEW_LOCATION + ":\\d+")) {
             SendMessage sendMessage = getSendMessage("Отправьте местоположение", dto.getChatId());
-            sendMessage.setReplyMarkup(ButtonsUtil.getLocationButton("Отправить местоположение"));
+            sendMessage.setReplyMarkup(ButtonsUtil.getLocationButton(SEND_MY_LOCATION));
             answerDTO.getMessages().add(sendMessage);
             lastAnswerService.addLastAnswer(dto.getText(), dto.getChatId());
         }

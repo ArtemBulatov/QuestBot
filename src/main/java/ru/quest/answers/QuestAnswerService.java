@@ -22,6 +22,7 @@ import ru.quest.utils.ReservedCharacters;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -99,7 +100,12 @@ public class QuestAnswerService implements AnswerService {
             answerDTO.getMessages().add(getSendMessage("Для работы с ботом используйте меню", dto.getChatId()));
         }
         else if (dto.getText().equals("/quests")) {
-            List<Quest> quests = questService.getaAll();
+            if (games.containsKey(dto.getChatId())) {
+                return answerDTO;
+            }
+
+            LocalDateTime dateTime = KhantyMansiyskDateTime.now();
+            List<Quest> quests = questService.getaAll().stream().filter(quest -> quest.getDateTime().isAfter(dateTime)).toList();
             if (quests.isEmpty()) {
                 answerDTO.getMessages().add(getSendMessage("Квестов пока нет", dto.getChatId()));
                 return answerDTO;
@@ -219,6 +225,7 @@ public class QuestAnswerService implements AnswerService {
             if (taskCompletingService.isPresentActiveTaskCompleting(questGame.getId())) {
                 answerDTO.getMessages().add(getSendMessage("Вы не можете выбрать другое задание. " +
                         "Сначала необходимо завершить уже начатое задание.", dto.getChatId()));
+                sendMessageForTask(task, questGame, dto.getChatId(), answerDTO);
                 return answerDTO;
             }
 
@@ -228,14 +235,24 @@ public class QuestAnswerService implements AnswerService {
             taskCompleting.setStartTime(KhantyMansiyskDateTime.now());
             taskCompletingService.save(taskCompleting);
 
-            SendMessage sendMessage = getSendMessage("Задание: \n" + ReservedCharacters.replace(task.getText()) + "\n\n*Подтвердите местоположение*", null, true, dto.getChatId());
-            sendMessage.setReplyMarkup(ButtonsUtil.getLocationButton(CONFIRM_LOCATION));
-            answerDTO.getMessages().add(sendMessage);
-            lastAnswerService.addLastAnswer(CONFIRM_LOCATION + ":" + task.getId(), dto.getChatId());
+            sendMessageForTask(task, questGame, dto.getChatId(), answerDTO);
         }
         else if (dto.getText().matches(COMPLETE_TASK + ":\\d+")) {
+            long taskId = Long.parseLong(dto.getText().split(":")[1]);
+            QuestGame questGame = games.get(dto.getChatId());
+            TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), taskId);
+
+            if (taskCompleting.getEndTime() != null) {
+                return answerDTO;
+            }
+
+            if (taskCompleting.getUserLocation() == null) {
+                answerDTO.getCallbackQueries().add(getAnswerCallbackQuery("Необходимо подтвердить местоположение", 3, dto.getCallbackQueryId()));
+                return answerDTO;
+            }
+
             answerDTO.getMessages().add(getSendMessage(SEND_ANSWER, dto.getChatId()));
-            lastAnswerService.addLastAnswer(SEND_ANSWER + ":" + dto.getText().split(":")[1], dto.getChatId());
+            lastAnswerService.addLastAnswer(SEND_ANSWER + ":" + taskId, dto.getChatId());
         }
         else if (dto.getText().equals(COMPLETE_QUEST_DATA)) {
             if (!games.containsKey(dto.getChatId())) {
@@ -256,11 +273,17 @@ public class QuestAnswerService implements AnswerService {
             Task task = taskService.get(taskId);
 
             QuestGame questGame = games.get(dto.getChatId());
-            questGame.setPenalties(questGame.getPenalties() + 15);
 
             TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), taskId);
+
+            if (taskCompleting.getEndTime() != null) {
+                return answerDTO;
+            }
+
             taskCompleting.setEndTime(KhantyMansiyskDateTime.now());
             taskCompletingService.save(taskCompleting);
+
+            questGame.setPenalties(questGame.getPenalties() + 15);
 
             List<Task> tasks = getAvailableTasks(task.getQuestId(), games.get(dto.getChatId()))
                     .stream().filter(task1 -> !task1.isLast()).collect(Collectors.toList());
@@ -276,13 +299,7 @@ public class QuestAnswerService implements AnswerService {
             QuestGame questGame = games.get(dto.getChatId());
             TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), taskId);
 
-            if (taskCompleting.getUsedHints().size() > 2) {
-                answerDTO.getCallbackQueries().add(getAnswerCallbackQuery("Вы уже использовали 3 возможные подсказки!", 5, dto.getCallbackQueryId()));
-                return answerDTO;
-            }
-
-            if (questGame.getPoints() < 5) {
-                answerDTO.getCallbackQueries().add(getAnswerCallbackQuery("Недостаточно баллов для получения подсказки", 5, dto.getCallbackQueryId()));
+            if (taskCompleting.getEndTime() != null) {
                 return answerDTO;
             }
 
@@ -297,10 +314,22 @@ public class QuestAnswerService implements AnswerService {
             }
 
             List<Hint> hints = allHints.stream().filter(hint -> !usedHintIds.contains(hint.getId())).toList();
+
+            if (hints.isEmpty()) {
+                answerDTO.getCallbackQueries().add(getAnswerCallbackQuery("Вы уже использовали все возможные подсказки!", 3, dto.getCallbackQueryId()));
+                return answerDTO;
+            }
+
+            if (questGame.getPoints() < 5) {
+                answerDTO.getCallbackQueries().add(getAnswerCallbackQuery("Недостаточно баллов для получения подсказки", 5, dto.getCallbackQueryId()));
+                return answerDTO;
+            }
+
             Hint hint = hints.get(0);
 
             if (hint.getHintsTask() != null) {
-                answerDTO.getMessages().add(getSendMessage(hint.getHintsTask(), dto.getChatId()));
+                String hintsTask = "Для получения подсказки: " + hint.getHintsTask();
+                answerDTO.getMessages().add(getSendMessage(hintsTask, dto.getChatId()));
                 lastAnswerService.addLastAnswer(GET_HINT + HINT + ":" + hint.getId(), dto.getChatId());
                 return answerDTO;
             }
@@ -356,8 +385,13 @@ public class QuestAnswerService implements AnswerService {
             long userId = Long.parseLong(params[1].split(":", 2)[1]);
 
             Hint hint = hintService.get(hintId);
+            Task task = taskService.get(hint.getTaskId());
             QuestGame questGame = games.get(userId);
             TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), hint.getTaskId());
+
+            if (taskCompleting.getUsedHints().stream().anyMatch(thisHint -> thisHint.getId() == hintId)) {
+                return answerDTO;
+            }
 
             answerDTO.getMessages().add(getSendMessage("Фото принято", userId));
             answerDTO.getMessages().add(getSendMessage("Подсказка: " + hint.getText(), userId));
@@ -367,6 +401,8 @@ public class QuestAnswerService implements AnswerService {
 
             questGame.setPoints(questGame.getPoints() - 5);
             questGameService.save(questGame);
+
+            sendMessageForTask(task, questGame, dto.getChatId(), answerDTO);
         }
         else if (dto.getText().matches(NOT_CONFIRM_PHOTO + ":\\d+" + HINT + USER + ":\\d+")) {
             String[] params = dto.getText().split(HINT, 2);
@@ -377,6 +413,12 @@ public class QuestAnswerService implements AnswerService {
             answerDTO.getMessages().add(getSendMessage("Фото не принято. Попробуйте снова", userId));
             answerDTO.getMessages().add(getSendMessage(hint.getHintsTask(), dto.getChatId()));
             lastAnswerService.addLastAnswer(GET_HINT + HINT + ":" + hint.getId(), dto.getChatId());
+        }
+        else if (dto.getText().matches(CONFIRM_LOCATION + ":\\d+")) {
+            lastAnswerService.addLastAnswer(dto.getText(), dto.getChatId());
+            SendMessage sendMessage = getSendMessage("Отправьте местоположение", dto.getChatId());
+            sendMessage.setReplyMarkup(ButtonsUtil.getLocationButton(SEND_MY_LOCATION));
+            answerDTO.getMessages().add(sendMessage);
         }
 
         else if (registrations.containsKey(dto.getChatId())
@@ -396,14 +438,8 @@ public class QuestAnswerService implements AnswerService {
                 TaskCompleting taskCompleting = taskCompletingService.get(questGame.getId(), taskId);
                 taskCompleting.setUserLocation(location);
                 taskCompletingService.save(taskCompleting);
-                String message = "Местоположение подтверждено! Теперь можно выполнять задание." +
-                        "\n\nЗадание:\n" + task.getText();
-                List<InlineButtonDTO> buttons = new ArrayList<>();
-                buttons.add(new InlineButtonDTO(COMPLETE_TASK, COMPLETE_TASK + ":" + task.getId()));
-                buttons.add(new InlineButtonDTO(GET_HINT, GET_HINT + ":" + task.getId()));
-                buttons.add(new InlineButtonDTO(SURRENDER, SURRENDER + ":" + task.getId()));
-                answerDTO.getMessages().add(getSendMessageWithInlineButtons(message, buttons, 1, false, dto.getChatId()));
-
+                answerDTO.getMessages().add(getSendMessage("Местоположение подтверждено!", dto.getChatId()));
+                sendMessageForTask(task, questGame, dto.getChatId(), answerDTO);
                 lastAnswerService.deleteLastAnswer(dto.getChatId());
             }
             else {
@@ -514,14 +550,24 @@ public class QuestAnswerService implements AnswerService {
             answerDTO.getDeleteMessages().add(getDeleteMessage(chatId, messageId));
         }
         if (task.getPhoto() == null) {
-            answerDTO.getMessages().add(getSendMessage(taskInfo, true, getInlineKeyboardMarkup(task), chatId));
+            answerDTO.getMessages().add(getSendMessage(taskInfo, false, getInlineKeyboardMarkupForTaskList(task), chatId));
         }
         else {
-            answerDTO.getPhotoMessages().add(getSendPhoto(taskInfo, task.getPhoto(), true, getInlineKeyboardMarkup(task), chatId));
+            answerDTO.getPhotoMessages().add(getSendPhoto(taskInfo, task.getPhoto(), false, getInlineKeyboardMarkupForTaskList(task), chatId));
         }
     }
 
-    private InlineKeyboardMarkup getInlineKeyboardMarkup(Task task) {
+    private void sendMessageForTask(Task task, QuestGame game, long chatId, AnswerDTO answerDTO) {
+        String message = getTaskInfo(game, task);
+        if (task.getPhoto() == null) {
+            answerDTO.getMessages().add(getSendMessage(message, false, getInlineKeyboardMarkupForChosenTask(task), chatId));
+        }
+        else {
+            answerDTO.getPhotoMessages().add(getSendPhoto(message, task.getPhoto(), false, getInlineKeyboardMarkupForChosenTask(task), chatId));
+        }
+    }
+
+    private InlineKeyboardMarkup getInlineKeyboardMarkupForTaskList(Task task) {
         InlineKeyboardMarkup inlineKeyboardMarkup =new InlineKeyboardMarkup();
 
         List<InlineButtonDTO> buttonDTOList = new ArrayList<>();
@@ -537,12 +583,29 @@ public class QuestAnswerService implements AnswerService {
         return inlineKeyboardMarkup;
     }
 
+    private InlineKeyboardMarkup getInlineKeyboardMarkupForChosenTask(Task task) {
+        InlineKeyboardMarkup inlineKeyboardMarkup =new InlineKeyboardMarkup();
+        List<InlineButtonDTO> buttons = new ArrayList<>();
+        buttons.add(new InlineButtonDTO(COMPLETE_TASK, COMPLETE_TASK + ":" + task.getId()));
+        buttons.add(new InlineButtonDTO(GET_HINT, GET_HINT + ":" + task.getId()));
+        buttons.add(new InlineButtonDTO(SURRENDER, SURRENDER + ":" + task.getId()));
+        buttons.add(new InlineButtonDTO(CONFIRM_LOCATION, CONFIRM_LOCATION + ":" + task.getId()));
+        inlineKeyboardMarkup.setKeyboard(ButtonsUtil.getInlineButtonsRowList(buttons, 1));
+        return inlineKeyboardMarkup;
+    }
+
     private String getTaskInfo(QuestGame game, Task task, int num, int count) {
         return "Ваши баллы: " + game.getPoints() +
                 "\nВаши штрафы: " + game.getPenalties() +
                 "\n\nДоступные задания\n" +
                 num + "/" + count +
-                "\n\nЗадание: \"" + ReservedCharacters.replace(task.getText()) + "\"";
+                "\n\nЗадание: \"" + task.getText() + "\"";
+    }
+
+    private String getTaskInfo(QuestGame game, Task task) {
+        return "Ваши баллы: " + game.getPoints() +
+                "\nВаши штрафы: " + game.getPenalties() +
+                "\n\nЗадание: \"" + task.getText() + "\"";
     }
 
     private String getLastTaskInfo(Task task) {

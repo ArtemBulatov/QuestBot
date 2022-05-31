@@ -64,6 +64,7 @@ public class NotificationService {
                                     buttonDTOList.add(new InlineButtonDTO(GET_TASKS, GET_TASKS + ":" + quest.getId()));
                                     sendMessage.setReplyMarkup(ButtonsUtil.getInlineButtons(buttonDTOList, 1));
                                     questBot.sendTheMessage(sendMessage);
+                                    registrationService.delete(registration.getId());
                                 });
                     }
                     if (minutes == 60) {
@@ -99,12 +100,13 @@ public class NotificationService {
 
         questGameService.getActiveQuestGames().forEach(questGame -> {
             Quest quest = questService.get(questGame.getQuestId());
-            Duration durationToEndQuest = Duration.between(dateTime, quest.getDateTime().plusHours(4));
+            LocalDateTime dateTimeAfterFourHours = quest.getDateTime().plusHours(4);
+            Duration durationToEndQuest = Duration.between(dateTime, dateTimeAfterFourHours);
             long minutes = durationToEndQuest.toMinutes();
             if (minutes == 30 && quest.getNotificationBeforeEnd() != null) {
                 questBot.sendTheMessage(getSendMessage(quest.getNotificationBeforeEnd(), questGame.getUserId()));
             }
-            else if (minutes == 0) {
+            else if (minutes == 0 || dateTime.isAfter(dateTimeAfterFourHours)) {
                 questGame.setEndTime(KhantyMansiyskDateTime.now());
                 questGame.setOver(true);
                 questGameService.save(questGame);

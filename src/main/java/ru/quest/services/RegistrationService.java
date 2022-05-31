@@ -37,4 +37,8 @@ public class RegistrationService {
     public void delete(long questId, long userId) {
         registrationRepository.findRegistrationByQuestIdAndUserId(questId, userId).ifPresent(registrationRepository::delete);
     }
+
+    public void delete(long id) {
+        registrationRepository.deleteById(id);
+    }
 }

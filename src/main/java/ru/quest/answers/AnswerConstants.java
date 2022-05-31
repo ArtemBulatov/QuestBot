@@ -12,4 +12,5 @@ public class AnswerConstants {
     public static final String HINT = "hint";
     public static final String CONFIRM_PHOTO = "Подтвердить фото";
     public static final String NOT_CONFIRM_PHOTO = "Неверное фото";
+    public static final String SEND_MY_LOCATION = "Отправить моё местоположение";
 }

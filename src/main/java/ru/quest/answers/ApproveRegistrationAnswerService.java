@@ -1,8 +1,6 @@
 package ru.quest.answers;
 
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.quest.QuestBot;
 import ru.quest.dto.AnswerDTO;
@@ -17,8 +15,10 @@ import ru.quest.services.QuestService;
 import ru.quest.services.RegistrationService;
 import ru.quest.services.UserService;
 import ru.quest.utils.ButtonsUtil;
-import ru.quest.utils.ReservedCharacters;
+import ru.quest.utils.KhantyMansiyskDateTime;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,9 +97,17 @@ public class ApproveRegistrationAnswerService implements AnswerService {
         else if (dto.getText().matches(APPROVE + ":\\d+")) {
             long registrationId = Long.parseLong(dto.getText().split(":", 2)[1]);
             Registration registration = registrationService.get(registrationId);
-            registration.setStatus(RegistrationStatus.APPROVED);
-            registrationService.save(registration);
             Quest quest = questService.get(registration.getQuestId());
+
+            registration.setStatus(RegistrationStatus.APPROVED);
+
+            LocalDateTime dateTime = KhantyMansiyskDateTime.now();
+            Duration duration = Duration.between(dateTime, quest.getDateTime());
+            if (duration.toMinutes() < 60 * 24) {
+                registration.setConfirmed(true);
+            }
+
+            registrationService.save(registration);
             questBot.sendTheMessage(getSendMessage("Ваша заявка на квест \"" + quest.getName() + "\" подтверждена. Вы успешно зарегистрированы.", registration.getUserId()));
             answerDTO.getMessages().add(getSendMessage("Заявка подтверждена", dto.getChatId()));
 
