@@ -43,6 +43,7 @@ public class EditTaskAnswerService implements AnswerService {
     private static final String LAST_TASK = "Это последнее задание";
     private static final String MARK_AS_LAST = "Отметить как последнее";
     private static final String DELETE_TASK = "Удалить задание";
+    private static final String ASK_ABOUT_DELETE_TASK= "Вы действительно хотите безвозвратно удалить это задание?";
     private static final String ENTER_ANSWER = "Введите ответ на задание";
     private static final String CHOOSE_ANSWER_TYPE = "Выберите тип ответа на задание";
     private static final String ENTER_TRUE_ANSWER_NOTIFICATION = "Введите уведомление о *правильном* ответе";
@@ -114,24 +115,11 @@ public class EditTaskAnswerService implements AnswerService {
             sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
         else if (dto.getText().matches(DELETE_TASK + ":\\d+")) {
-            long taskId = Long.parseLong(dto.getText().split(":", 2)[1]);
-            Task taskToDelete = taskService.get(taskId);
-            List<Task> tasks = taskService.getAllByQuestId(taskToDelete.getQuestId());
-            taskToDelete = tasks.stream().filter(task -> task.getId() == taskId).findFirst().get();
-            int index = tasks.indexOf(taskToDelete);
-
-            tasks.remove(taskToDelete);
-            taskService.delete(taskToDelete);
-
-            if (tasks.isEmpty()) {
-                dto.setText(THIS_QUEST + ":" + taskToDelete.getQuestId() + " " + CHANGE_INDEX + ":" + 0);
-                answerDTO = editQuestAnswerService.getAnswer(dto);
-                QuestAdminBot.statusMap.put(dto.getChatId(), AdminStatus.EDIT_QUEST);
-                return answerDTO;
-            }
-
-            index = Math.max(index - 1, 0);
-            sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
+            String[] buttons = new String[2];
+            buttons[0] = YES;
+            buttons[1] = NO;
+            answerDTO.getMessages().add(getSendMessage(ASK_ABOUT_DELETE_TASK, buttons, dto.getChatId()));
+            lastAnswerService.addLastAnswer(dto.getText(), dto.getChatId());
         }
         else if(dto.getText().matches(ADD_NEW_LOCATION + ":\\d+")) {
             SendMessage sendMessage = getSendMessage("Отправьте местоположение", dto.getChatId());
@@ -297,6 +285,38 @@ public class EditTaskAnswerService implements AnswerService {
             taskService.save(task);
             answerDTO.getMessages().add(getSendMessage("Местоположение задания сохранено", dto.getChatId()));
             sendTaskLocation(task, dto.getChatId(), answerDTO);
+        }
+
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).matches(DELETE_TASK + ":\\d+")
+                && dto.getText().equals(YES)) {
+            long taskId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":", 2)[1]);
+            Task taskToDelete = taskService.get(taskId);
+
+            List<Task> tasks = taskService.getAllByQuestId(taskToDelete.getQuestId());
+            taskToDelete = tasks.stream().filter(task -> task.getId() == taskId).findFirst().get();
+            int index = tasks.indexOf(taskToDelete);
+
+            tasks.remove(taskToDelete);
+            taskService.delete(taskToDelete);
+
+            if (tasks.isEmpty()) {
+                dto.setText(THIS_QUEST + ":" + taskToDelete.getQuestId() + " " + CHANGE_INDEX + ":" + 0);
+                answerDTO = editQuestAnswerService.getAnswer(dto);
+                QuestAdminBot.statusMap.put(dto.getChatId(), AdminStatus.EDIT_QUEST);
+                return answerDTO;
+            }
+
+            index = Math.max(index - 1, 0);
+            sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
+        }
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).matches(DELETE_TASK + ":\\d+")
+                && dto.getText().equals(NO)) {
+            long taskId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":", 2)[1]);
+            Task taskToDelete = taskService.get(taskId);
+            List<Task> tasks = taskService.getAllByQuestId(taskToDelete.getQuestId());
+            taskToDelete = tasks.stream().filter(task -> task.getId() == taskId).findFirst().get();
+            int index = tasks.indexOf(taskToDelete);
+            sendMessageForTask(tasks, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
 
         return answerDTO;
