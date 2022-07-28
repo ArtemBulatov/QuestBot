@@ -1,16 +1,18 @@
 user:
   bot:
-    name:
-    token:
+    name: ${USER_BOT_NAME}
+    token: ${USER_BOT_TOKEN}
+
 admin:
   bot:
-    name:
-    token:
+    name: ${ADMIN_BOT_NAME}
+    token: ${ADMIN_BOT_TOKEN}
+  password: ${ADMIN_PASSWORD}
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/quest_bot_db
-    username:
-    password:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:quest_bot_db}
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
