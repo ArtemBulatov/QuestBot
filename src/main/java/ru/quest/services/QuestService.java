@@ -39,7 +39,8 @@ public class QuestService {
     }
 
     public void delete(Quest quest) {
-        questRepository.delete(quest);
+        quest.setDeleted(true);
+        questRepository.save(quest);
         taskService.deleteAllByQuestId(quest.getId());
     }
 }
