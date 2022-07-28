@@ -6,6 +6,7 @@ import ru.quest.models.Quest;
 import ru.quest.repositories.QuestRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestService {
@@ -33,8 +34,13 @@ public class QuestService {
         return questRepository.findAll();
     }
 
+    public List<Quest> getaAllNotDeleted() {
+        return questRepository.findAll().stream().filter(quest -> !quest.isDeleted()).collect(Collectors.toList());
+    }
+
     public void delete(Quest quest) {
-        questRepository.delete(quest);
+        quest.setDeleted(true);
+        questRepository.save(quest);
         taskService.deleteAllByQuestId(quest.getId());
     }
 }

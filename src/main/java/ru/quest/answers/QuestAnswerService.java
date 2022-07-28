@@ -105,7 +105,7 @@ public class QuestAnswerService implements AnswerService {
             }
 
             LocalDateTime dateTime = KhantyMansiyskDateTime.now();
-            List<Quest> quests = questService.getaAll().stream().filter(quest -> quest.getDateTime().isAfter(dateTime)).toList();
+            List<Quest> quests = questService.getaAllNotDeleted().stream().filter(quest -> quest.getDateTime().isAfter(dateTime)).toList();
             if (quests.isEmpty()) {
                 answerDTO.getMessages().add(getSendMessage("Квестов пока нет", dto.getChatId()));
                 return answerDTO;
@@ -117,7 +117,7 @@ public class QuestAnswerService implements AnswerService {
             answerDTO.getMessages().add(getSendMessage("Выберите квест", buttons, dto.getChatId()));
         }
         else if (dto.getText().matches(".+\\s\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2}")) {
-            Quest checkedQuest = questService.getaAll().stream()
+            Quest checkedQuest = questService.getaAllNotDeleted().stream()
                     .filter(quest -> quest.getQuestButton().equals(dto.getText())).findFirst().get();
 
             List<InlineButtonDTO> buttons = new ArrayList<>();

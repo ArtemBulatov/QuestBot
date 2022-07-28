@@ -20,6 +20,7 @@ public class Quest {
     private String instruction;
     private String notificationBeforeEnd;
     private LocalDateTime dateTime;
+    private boolean deleted;
 
     public String getQuestButton() {
         return name + " " + dateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
