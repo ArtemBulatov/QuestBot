@@ -49,7 +49,7 @@ public class EditTaskAnswerService implements AnswerService {
     private static final String ENTER_TRUE_ANSWER_NOTIFICATION = "Введите уведомление о *правильном* ответе";
     private static final String ENTER_FALSE_ANSWER_NOTIFICATION = "Введите уведомление о *неправильном* ответе";
     private static final String TRUE_ANSWER_NOTIFICATION_TEXT = "Это правильный ответ!";
-    private static final String FALSE_ANSWER_NOTIFICATION_TEXT = "Неправльный ответ. Попробуйте снова!";
+    private static final String FALSE_ANSWER_NOTIFICATION_TEXT = "Неправильный ответ. Попробуйте снова!";
 
     private static final String DELETE_MESSAGE = "DELETEMESSAGE";
 
