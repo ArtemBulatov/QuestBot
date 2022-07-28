@@ -49,7 +49,7 @@ public class ApproveRegistrationAnswerService implements AnswerService {
         AnswerDTO answerDTO = new AnswerDTO();
         if (dto.getText().equals("/registrations")) {
             List<String> questButtons = new ArrayList<>();
-            questService.getaAll().forEach(quest -> {
+            questService.getaAllNotDeleted().forEach(quest -> {
                 List<Registration> registrations = registrationService.getAllByQuestId(quest.getId())
                         .stream().filter(reg -> reg.getStatus() == null).toList();
                 if (!registrations.isEmpty()) {
@@ -67,7 +67,7 @@ public class ApproveRegistrationAnswerService implements AnswerService {
         }
         else if (dto.getText().matches(".+\\(\\d+\\)")) {
             String questName = dto.getText().split("\\(\\d+\\)")[0];
-            Quest chosenQuest = questService.getaAll().stream().filter(quest -> quest.getName().equals(questName)).findFirst().get();
+            Quest chosenQuest = questService.getaAllNotDeleted().stream().filter(quest -> quest.getName().equals(questName)).findFirst().get();
             List<Registration> registrations = registrationService.getAllByQuestId(chosenQuest.getId())
                     .stream().filter(reg -> reg.getStatus() == null).toList();
             sendMessageForRegistration(registrations, 0, dto.getChatId(), dto.getMessageId(), answerDTO);

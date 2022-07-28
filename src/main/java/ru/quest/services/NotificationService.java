@@ -10,7 +10,6 @@ import ru.quest.enums.RegistrationStatus;
 import ru.quest.models.Quest;
 import ru.quest.utils.ButtonsUtil;
 import ru.quest.utils.KhantyMansiyskDateTime;
-import ru.quest.utils.ReservedCharacters;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -37,7 +36,7 @@ public class NotificationService {
     @Scheduled(fixedRate = 60000)
     private void checkNotifications() {
         LocalDateTime dateTime = KhantyMansiyskDateTime.now();
-        List<Quest> quests = questService.getaAll();
+        List<Quest> quests = questService.getaAllNotDeleted();
         if (quests.isEmpty()) {
             return;
         }

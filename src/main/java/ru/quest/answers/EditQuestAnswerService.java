@@ -41,7 +41,8 @@ public class EditQuestAnswerService implements AnswerService {
     private static final String ENTER_INSTRUCTION_TEXT = "Введите текст инструкции";
     private static final String SHOW_INSTRUCTION = "Посмотреть инструкцию";
     private static final String DELETE_INSTRUCTION = "Удалить инструкцию";
-    private static final String CHANGE_DATETIME = "Изменить дату и время";
+    private static final String SET_DATETIME = "Назначить дату и время";
+    private static final String SHOW_DATETIME = "Посмотреть даты и время";
     private static final String ADD_NEW_END_NOTIFICATION = "Добавить уведомление за 30 мин";
     private static final String ENTER_END_NOTIFICATION_TEXT = "Введите текст уведомления за 30 мин";
     private static final String SHOW_END_NOTIFICATION = "Посмотреть уведомление за 30 мин";
@@ -74,7 +75,7 @@ public class EditQuestAnswerService implements AnswerService {
             bufferMapForTasks.remove(dto.getChatId());
             EditHintAnswerService.bufferMapForHints.remove(dto.getChatId());
 
-            List<Quest> quests = questService.getaAll();
+            List<Quest> quests = questService.getaAllNotDeleted();
             if (quests.isEmpty()) {
                 String[] buttons = new String[1];
                 buttons[0] = CREATE_NEW_QUEST;
@@ -88,7 +89,7 @@ public class EditQuestAnswerService implements AnswerService {
             long questId = Long.parseLong(parts[0].split(":", 2)[1]);
             int change = Integer.parseInt(parts[1].split(":", 2)[1]);
 
-            List<Quest> quests = questService.getaAll();
+            List<Quest> quests = questService.getaAllNotDeleted();
             int index = quests.indexOf(quests.stream().filter(thisQuest -> thisQuest.getId() == questId).findFirst().get());
 
             if(index+change < 0) {
@@ -110,7 +111,7 @@ public class EditQuestAnswerService implements AnswerService {
             buttons[0] = YES;
             buttons[1] = NO;
             answerDTO.getMessages().add(getSendMessage(message, buttons, dto.getChatId()));
-            lastAnswerService.addLastAnswer(message, dto.getChatId());
+            lastAnswerService.addLastAnswer(ASK_ABOUT_DELETE_QUEST + ":" + questId, dto.getChatId());
         }
         else if (dto.getText().equals(CREATE_NEW_QUEST)) {
             Quest quest = new Quest();
@@ -147,7 +148,7 @@ public class EditQuestAnswerService implements AnswerService {
             quest.setInstruction("");
             questService.save(quest);
 
-            List<Quest> quests = questService.getaAll();
+            List<Quest> quests = questService.getaAllNotDeleted();
             int index = quests.indexOf(quests.stream().filter(thisQuest -> thisQuest.getId() == questId).findFirst().get());
             sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
@@ -169,11 +170,11 @@ public class EditQuestAnswerService implements AnswerService {
             quest.setNotificationBeforeEnd("");
             questService.save(quest);
 
-            List<Quest> quests = questService.getaAll();
+            List<Quest> quests = questService.getaAllNotDeleted();
             int index = quests.indexOf(quests.stream().filter(thisQuest -> thisQuest.getId() == questId).findFirst().get());
             sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
-        else if (dto.getText().matches(CHANGE_DATETIME + ":\\d+")) {
+        else if (dto.getText().matches(SET_DATETIME + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);
             Quest quest = questService.get(questId);
             bufferForNewQuests.put(dto.getChatId(), quest);
@@ -183,12 +184,13 @@ public class EditQuestAnswerService implements AnswerService {
 
 
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).contains(ASK_ABOUT_DELETE_QUEST) && dto.getText().equals(YES)) {
-            String questName = lastAnswerService.deleteLastAnswer(dto.getChatId()).split("\"", 3)[1].trim();
-            Quest thisQuest = questService.get(questName);
-            List<Quest> quests = questService.getaAll();
+            long questId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":")[1]);
+            Quest thisQuest = questService.get(questId);
+            List<Quest> quests = questService.getaAllNotDeleted();
             Quest questToDelete = quests.stream().filter(quest -> quest.getId() == thisQuest.getId()).findFirst().get();
             int index = quests.indexOf(questToDelete);
 
+            String questName = thisQuest.getName();
             quests.remove(questToDelete);
             questService.delete(questToDelete);
 
@@ -205,9 +207,8 @@ public class EditQuestAnswerService implements AnswerService {
             sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).contains(ASK_ABOUT_DELETE_QUEST) && dto.getText().equals(NO)) {
-            String questName = lastAnswerService.deleteLastAnswer(dto.getChatId()).split("\"", 3)[1].trim();
-            long questId = questService.get(questName).getId();
-            List<Quest> quests = questService.getaAll();
+            long questId = Long.parseLong(lastAnswerService.deleteLastAnswer(dto.getChatId()).split(":")[1]);
+            List<Quest> quests = questService.getaAllNotDeleted();
             Quest thisQuest = quests.stream().filter(quest -> quest.getId() == questId).findFirst().get();
             int index = quests.indexOf(thisQuest);
 
@@ -244,7 +245,7 @@ public class EditQuestAnswerService implements AnswerService {
             long questId = questService.save(quest).getId();
             answerDTO.getMessages().add(getSendMessage(message, dto.getChatId()));
 
-            List<Quest> quests = questService.getaAll();
+            List<Quest> quests = questService.getaAllNotDeleted();
             int index = quests.indexOf(quests.stream().filter(thisQuest -> thisQuest.getId() == questId).findFirst().get());
             sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
@@ -312,7 +313,7 @@ public class EditQuestAnswerService implements AnswerService {
             buttonDTOList.add(new InlineButtonDTO(ADD_NEW_END_NOTIFICATION, ADD_NEW_END_NOTIFICATION + ":" + quest.getId()));
         }
 
-        buttonDTOList.add(new InlineButtonDTO(CHANGE_DATETIME, CHANGE_DATETIME + ":" + quest.getId()));
+        buttonDTOList.add(new InlineButtonDTO(SET_DATETIME, SET_DATETIME + ":" + quest.getId()));
         inlineKeyboardMarkup.setKeyboard(ButtonsUtil.getInlineButtonsRowList(buttonDTOList, 1));
 
         buttonDTOList = new ArrayList<>();
