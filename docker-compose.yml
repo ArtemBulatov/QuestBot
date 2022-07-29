@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  quest-bot:
+    depends_on:
+      - quest_bot_db
+    build:
+      context: .
+    environment:
+      USER_BOT_NAME: moe_testirovanie_bot
+      USER_BOT_TOKEN: 5385913252:AAF8k79sZ0M1IetusNUhB7Aya3Xdk3Y2Ka4
+      ADMIN_BOT_NAME: moi_admin_test_bot
+      ADMIN_BOT_TOKEN: 5388417933:AAHlk6zoMVWfrRL1iFdlH2qVVKov_LcSDM4
+      ADMIN_PASSWORD: AAHlk6zoMVWfrRL
+      MYSQL_HOST: quest_bot_db
+      MYSQL_PORT: 3306
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: quest_bot_db
+    ports:
+      - '8080:8080'
+    expose:
+      - '8080'
+    restart: always
+  quest_bot_db:
+    image: mysql:8.0.29
+    restart: always
+    environment:
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: quest_bot_db
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
