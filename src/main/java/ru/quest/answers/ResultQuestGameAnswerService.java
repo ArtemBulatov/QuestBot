@@ -19,6 +19,8 @@ import ru.quest.utils.ButtonsUtil;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static ru.quest.answers.AnswerConstants.*;
@@ -45,7 +47,9 @@ public class ResultQuestGameAnswerService implements AnswerService {
         AnswerDTO answerDTO = new AnswerDTO();
         if (dto.getText().equals("/quests_results")) {
             List<String> questButtons = new ArrayList<>();
-            questService.getaAll().forEach(quest -> questButtons.add(quest.getQuestButton()));
+            List<Quest> quests = questService.getaAll();
+            quests.sort(Collections.reverseOrder(Comparator.comparing(Quest::getDateTime)));
+            quests.forEach(quest -> questButtons.add(quest.getQuestButton()));
 
             if (questButtons.isEmpty()) {
                 answerDTO.getMessages().add(getSendMessage("Нет созданных квестов", dto.getChatId()));
