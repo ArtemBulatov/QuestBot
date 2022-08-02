@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import ru.quest.models.Quest;
@@ -8,6 +9,7 @@ import ru.quest.repositories.QuestRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class QuestService {
     private final QuestRepository questRepository;

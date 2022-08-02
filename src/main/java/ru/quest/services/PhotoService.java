@@ -1,6 +1,7 @@
 package ru.quest.services;
 
 import com.google.gson.Gson;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 public class PhotoService {
 

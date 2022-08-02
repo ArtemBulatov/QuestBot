@@ -1,5 +1,6 @@
 package ru.quest;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -32,6 +33,7 @@ import static ru.quest.answers.EditQuestAnswerService.CREATE_NEW_QUEST;
 import static ru.quest.answers.EditQuestAnswerService.THIS_QUEST;
 import static ru.quest.answers.EditTaskAnswerService.*;
 
+@Slf4j
 @Component
 public class QuestAdminBot extends TelegramLongPollingBot {
 
@@ -143,7 +145,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -151,7 +153,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(editMessageText);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -159,7 +161,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -167,7 +169,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(sendPhoto);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -175,7 +177,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(sendDocument);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -183,7 +185,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(sendLocation);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -191,7 +193,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(editMessageMedia);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -199,7 +201,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(callbackQuery);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -207,7 +209,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         try {
             execute(deleteMessage);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 

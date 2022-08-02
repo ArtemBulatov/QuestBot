@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static ru.quest.answers.QuestAnswerService.GET_TASKS;
 
+@Slf4j
 @Service
 public class NotificationService {
     private final QuestService questService;

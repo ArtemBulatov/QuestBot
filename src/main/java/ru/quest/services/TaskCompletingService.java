@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.quest.models.TaskCompleting;
 import ru.quest.repositories.TaskCompletingRepository;
@@ -7,6 +8,7 @@ import ru.quest.repositories.TaskCompletingRepository;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class TaskCompletingService {
     private final TaskCompletingRepository taskCompletingRepository;

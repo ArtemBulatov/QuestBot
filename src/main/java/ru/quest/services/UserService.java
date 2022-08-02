@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.quest.models.User;
@@ -7,6 +8,7 @@ import ru.quest.repositories.UserRepository;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserService {
     private final UserRepository userRepository;

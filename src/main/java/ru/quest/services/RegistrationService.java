@@ -1,11 +1,13 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.quest.models.Registration;
 import ru.quest.repositories.RegistrationRepository;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class RegistrationService {
     private final RegistrationRepository registrationRepository;

@@ -1,11 +1,13 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.quest.models.Task;
 import ru.quest.repositories.TaskRepository;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;

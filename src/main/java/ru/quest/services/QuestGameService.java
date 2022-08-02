@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.quest.models.QuestGame;
 import ru.quest.repositories.QuestGameRepository;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class QuestGameService {
     private final QuestGameRepository questGameRepository;
