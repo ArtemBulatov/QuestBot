@@ -12,10 +12,13 @@ public class Task {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
+    @Column(length = 1000)
     private String text;
     private AnswerType answerType;
     private String answer;
+    @Column(length = 1000)
     private String trueAnswer;
+    @Column(length = 1000)
     private String falseAnswer;
     private boolean isLast;
     private long questId;

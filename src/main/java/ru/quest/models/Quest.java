@@ -16,8 +16,11 @@ public class Quest {
     private long id;
     private QuestType type;
     private String name;
+    @Column(length = 1000)
     private String description;
+    @Column(length = 1000)
     private String instruction;
+    @Column(length = 1000)
     private String notificationBeforeEnd;
     private LocalDateTime dateTime;
     private boolean deleted;
