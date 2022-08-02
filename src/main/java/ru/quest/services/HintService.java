@@ -1,5 +1,6 @@
 package ru.quest.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.quest.models.Hint;
 import ru.quest.repositories.HintRepository;
@@ -7,6 +8,7 @@ import ru.quest.repositories.HintRepository;
 import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 public class HintService {
     private final HintRepository hintRepository;
@@ -30,7 +32,12 @@ public class HintService {
     }
 
     public void delete(Hint hint) {
-        hintRepository.delete(hint);
+        try {
+            hintRepository.delete(hint);
+        }
+        catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 
     public void deleteAllByTaskId(long id) {
