@@ -8,7 +8,6 @@ import ru.quest.dto.MessageDTO;
 import ru.quest.enums.QuestType;
 import ru.quest.models.Quest;
 import ru.quest.models.Task;
-import ru.quest.services.HintService;
 import ru.quest.services.LastAnswerService;
 import ru.quest.services.QuestService;
 import ru.quest.services.TaskService;
@@ -41,8 +40,7 @@ public class EditQuestAnswerService implements AnswerService {
     private static final String ENTER_INSTRUCTION_TEXT = "Введите текст инструкции";
     private static final String SHOW_INSTRUCTION = "Посмотреть инструкцию";
     private static final String DELETE_INSTRUCTION = "Удалить инструкцию";
-    private static final String SET_DATETIME = "Назначить дату и время";
-    private static final String SHOW_DATETIME = "Посмотреть даты и время";
+    private static final String CHANGE_DATETIME = "Изменить дату и время";
     private static final String ADD_NEW_END_NOTIFICATION = "Добавить уведомление за 30 мин";
     private static final String ENTER_END_NOTIFICATION_TEXT = "Введите текст уведомления за 30 мин";
     private static final String SHOW_END_NOTIFICATION = "Посмотреть уведомление за 30 мин";
@@ -51,15 +49,13 @@ public class EditQuestAnswerService implements AnswerService {
 
     private final QuestService questService;
     private final TaskService taskService;
-    private final HintService hintService;
     private final LastAnswerService lastAnswerService;
 
     private final Map<Long, Quest> bufferForNewQuests = new HashMap<>();
 
-    public EditQuestAnswerService(QuestService questService, TaskService taskService, HintService hintService, LastAnswerService lastAnswerService) {
+    public EditQuestAnswerService(QuestService questService, TaskService taskService, LastAnswerService lastAnswerService) {
         this.questService = questService;
         this.taskService = taskService;
-        this.hintService = hintService;
         this.lastAnswerService = lastAnswerService;
     }
 
@@ -174,7 +170,7 @@ public class EditQuestAnswerService implements AnswerService {
             int index = quests.indexOf(quests.stream().filter(thisQuest -> thisQuest.getId() == questId).findFirst().get());
             sendMessageForQuest(quests, index, dto.getChatId(), dto.getMessageId(), answerDTO);
         }
-        else if (dto.getText().matches(SET_DATETIME + ":\\d+")) {
+        else if (dto.getText().matches(CHANGE_DATETIME + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);
             Quest quest = questService.get(questId);
             bufferForNewQuests.put(dto.getChatId(), quest);
@@ -313,7 +309,7 @@ public class EditQuestAnswerService implements AnswerService {
             buttonDTOList.add(new InlineButtonDTO(ADD_NEW_END_NOTIFICATION, ADD_NEW_END_NOTIFICATION + ":" + quest.getId()));
         }
 
-        buttonDTOList.add(new InlineButtonDTO(SET_DATETIME, SET_DATETIME + ":" + quest.getId()));
+        buttonDTOList.add(new InlineButtonDTO(CHANGE_DATETIME, CHANGE_DATETIME + ":" + quest.getId()));
         inlineKeyboardMarkup.setKeyboard(ButtonsUtil.getInlineButtonsRowList(buttonDTOList, 1));
 
         buttonDTOList = new ArrayList<>();
