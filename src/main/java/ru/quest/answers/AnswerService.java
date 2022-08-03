@@ -89,6 +89,10 @@ public interface AnswerService {
         return answerCallbackQuery;
     }
 
+    default SendPhoto getSendPhoto(Photo photo, long chatId) {
+        return getSendPhoto("", photo, false, null, chatId);
+    }
+
     default SendPhoto getSendPhoto(String message, Photo photo, boolean markDown, ReplyKeyboard replyKeyboard, long chatId) {
         SendPhoto sendPhoto = new SendPhoto();
         sendPhoto.setChatId(String.valueOf(chatId));

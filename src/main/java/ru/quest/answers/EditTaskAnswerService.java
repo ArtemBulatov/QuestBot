@@ -46,8 +46,8 @@ public class EditTaskAnswerService implements AnswerService {
     private static final String ASK_ABOUT_DELETE_TASK= "Вы действительно хотите безвозвратно удалить это задание?";
     private static final String ENTER_ANSWER = "Введите ответ на задание";
     private static final String CHOOSE_ANSWER_TYPE = "Выберите тип ответа на задание";
-    private static final String ENTER_TRUE_ANSWER_NOTIFICATION = "Введите уведомление о *правильном* ответе";
-    private static final String ENTER_FALSE_ANSWER_NOTIFICATION = "Введите уведомление о *неправильном* ответе";
+    private static final String ENTER_TRUE_ANSWER_NOTIFICATION = "Введите уведомление о *правильном* ответе \\(текст или фото\\)";
+    private static final String ENTER_FALSE_ANSWER_NOTIFICATION = "Введите уведомление о *неправильном* ответе  \\(текст или фото\\)";
     private static final String TRUE_ANSWER_NOTIFICATION_TEXT = "Это правильный ответ!";
     private static final String FALSE_ANSWER_NOTIFICATION_TEXT = "Неправильный ответ. Попробуйте снова!";
 
@@ -259,7 +259,14 @@ public class EditTaskAnswerService implements AnswerService {
         }
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TRUE_ANSWER_NOTIFICATION)
                 && bufferMapForTasks.containsKey(dto.getChatId())) {
-            bufferMapForTasks.get(dto.getChatId()).setTrueAnswer(dto.getText());
+            if (dto.getPhotoSizeList().isEmpty()) {
+                bufferMapForTasks.get(dto.getChatId()).setTrueAnswer(dto.getText());
+            }
+            else {
+                Photo photo = photoService.getSavedPhotoFromDto(dto.getPhotoSizeList(), botToken);
+                bufferMapForTasks.get(dto.getChatId()).setTrueAnswer("");
+                bufferMapForTasks.get(dto.getChatId()).setTrueAnswerPhoto(photo);
+            }
             lastAnswerService.deleteLastAnswer(dto.getChatId());
             answerDTO.getMessages().add(getSendMessage(ENTER_FALSE_ANSWER_NOTIFICATION, new String[]{FALSE_ANSWER_NOTIFICATION_TEXT}, true, dto.getChatId()));
             lastAnswerService.addLastAnswer(ENTER_FALSE_ANSWER_NOTIFICATION, dto.getChatId());
@@ -267,7 +274,16 @@ public class EditTaskAnswerService implements AnswerService {
         else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_FALSE_ANSWER_NOTIFICATION)
                 && bufferMapForTasks.containsKey(dto.getChatId())) {
             Task task = bufferMapForTasks.remove(dto.getChatId());
-            task.setFalseAnswer(dto.getText());
+
+            if (dto.getPhotoSizeList().isEmpty()) {
+                task.setFalseAnswer(dto.getText());
+            }
+            else {
+                Photo photo = photoService.getSavedPhotoFromDto(dto.getPhotoSizeList(), botToken);
+                task.setFalseAnswer("");
+                task.setFalseAnswerPhoto(photo);
+            }
+
             Task savedTask = taskService.save(task);
 
             List<Task> tasks = taskService.getAllByQuestId(savedTask.getQuestId());
@@ -412,12 +428,21 @@ public class EditTaskAnswerService implements AnswerService {
         if (task.getAnswerType() == AnswerType.TEXT) {
             answer = "\"" + ReservedCharacters.replace(task.getAnswer()) + "\"";
         }
+        String trueAnswer = "фото";
+        String falseAnswer = "фото";
+        if (task.getTrueAnswerPhoto() == null) {
+            trueAnswer = ReservedCharacters.replace(task.getTrueAnswer());
+        }
+        if (task.getFalseAnswerPhoto() == null) {
+            falseAnswer = ReservedCharacters.replace(task.getFalseAnswer());
+        }
+
         return "Задания квеста \"*" + quest.getName() + "*\"\n\n" +
                 num + "/" + count +
                 "\n\nТекст задания: \"" + ReservedCharacters.replace(task.getText()) + "\"" +
                 "\n\nОтвет: " + ReservedCharacters.replace(answer) +
-                "\n\nУведомление о правильном ответе: \"" + ReservedCharacters.replace(task.getTrueAnswer()) + "\"" +
-                "\n\nУведомление о неправильном ответе: \"" + ReservedCharacters.replace(task.getFalseAnswer()) + "\"";
+                "\n\nУведомление о правильном ответе: \"" + trueAnswer + "\"" +
+                "\n\nУведомление о неправильном ответе: \"" + falseAnswer + "\"";
     }
 
     private String[] getAnswerTypesButtons() {

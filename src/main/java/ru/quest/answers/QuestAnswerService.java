@@ -375,7 +375,12 @@ public class QuestAnswerService implements AnswerService {
 
             if (!taskCompleting.isAnswered()) {
                 Task task = taskService.get(taskCompleting.getTaskId());
-                answerDTO.getMessages().add(getSendMessage(task.getFalseAnswer(), userId));
+                if (task.getFalseAnswerPhoto() == null) {
+                    answerDTO.getMessages().add(getSendMessage(task.getFalseAnswer(), userId));
+                }
+                else {
+                    answerDTO.getPhotoMessages().add(getSendPhoto(task.getPhoto(), userId));
+                }
                 lastAnswerService.addLastAnswer(SEND_ANSWER + ":" + taskId, userId);
             }
         }
@@ -482,7 +487,12 @@ public class QuestAnswerService implements AnswerService {
             }
 
             if (!dto.getText().toLowerCase(Locale.ROOT).equals(task.getAnswer().toLowerCase(Locale.ROOT))) {
-                answerDTO.getMessages().add(getSendMessage(task.getFalseAnswer(), dto.getChatId()));
+                if (task.getFalseAnswerPhoto() == null) {
+                    answerDTO.getMessages().add(getSendMessage(task.getFalseAnswer(), dto.getChatId()));
+                }
+                else {
+                    answerDTO.getPhotoMessages().add(getSendPhoto(task.getFalseAnswerPhoto(), dto.getChatId()));
+                }
                 return answerDTO;
             }
             lastAnswerService.deleteLastAnswer(dto.getChatId());
