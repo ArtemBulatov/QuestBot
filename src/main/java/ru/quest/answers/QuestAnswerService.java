@@ -36,6 +36,7 @@ public class QuestAnswerService implements AnswerService {
     private static final String ENTER_TEAM_NAME = "Введите название вашей команды";
     private static final String ENTER_TEAM_MEMBERS_NUMBER = "Введите количество участников в команде";
     public static final String GET_TASKS = "Получить задания";
+    public static final String BEGIN_QUEST = "Начать квест";
     private static final String CHOOSE_TASK = "Выбрать задание";
     private static final String COMPLETE_TASK = "Отправить ответ";
     private static final String CONFIRM_LOCATION = "Подтвердить местоположение";
@@ -50,6 +51,7 @@ public class QuestAnswerService implements AnswerService {
     private final QuestService questService;
     private final TaskService taskService;
     private final HintService hintService;
+    private final PrologueService prologueService;
     private final QuestGameService questGameService;
     private final TaskCompletingService taskCompletingService;
     private final RegistrationService registrationService;
@@ -69,7 +71,7 @@ public class QuestAnswerService implements AnswerService {
             QuestService questService,
             TaskService taskService,
             HintService hintService,
-            QuestGameService questGameService,
+            PrologueService prologueService, QuestGameService questGameService,
             TaskCompletingService taskCompletingService,
             RegistrationService registrationService,
             LocationService locationService,
@@ -80,6 +82,7 @@ public class QuestAnswerService implements AnswerService {
         this.questService = questService;
         this.taskService = taskService;
         this.hintService = hintService;
+        this.prologueService = prologueService;
         this.questGameService = questGameService;
         this.taskCompletingService = taskCompletingService;
         this.registrationService = registrationService;
@@ -184,6 +187,19 @@ public class QuestAnswerService implements AnswerService {
             registrationService.delete(questId, dto.getChatId());
             answerDTO.getMessages().add(getSendMessage("Вы отказались от участия в квесте \"" + quest.getName() + "\"." +
                     "\nЕсли всё же надумаете участвовать, зарегистрируйтесь на квест заново.", dto.getChatId()));
+        }
+        else if (dto.getText().matches(BEGIN_QUEST + ":\\d+")) {
+            long questId = Long.parseLong(dto.getText().split(":")[1]);
+            Prologue prologue = prologueService.findByQuestId(questId);
+            List<InlineButtonDTO> buttons = new ArrayList<>();
+            buttons.add(new InlineButtonDTO(GET_TASKS, GET_TASKS + ":" + questId));
+
+            if (prologue.getPhoto() == null) {
+                answerDTO.getMessages().add(getSendMessageWithInlineButtons(prologue.getText(), buttons, 1, false, dto.getChatId()));
+            }
+            else {
+                answerDTO.getPhotoMessages().add(getSendPhoto(prologue.getText(), prologue.getPhoto(), false, ButtonsUtil.getInlineButtons(buttons, 1), dto.getChatId()));
+            }
         }
         else if (dto.getText().matches(GET_TASKS + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);

@@ -43,4 +43,8 @@ public class EpilogueService {
         }
         return epilogue;
     }
+
+    public void deleteByQuestId(long questId) {
+        epilogueRepository.findEpilogueByQuestId(questId).ifPresent(this::delete);
+    }
 }

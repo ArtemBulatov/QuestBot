@@ -14,10 +14,14 @@ import java.util.stream.Collectors;
 public class QuestService {
     private final QuestRepository questRepository;
     private final TaskService taskService;
+    private final PrologueService prologueService;
+    private final EpilogueService epilogueService;
 
-    public QuestService(QuestRepository questRepository, @Lazy TaskService taskService) {
+    public QuestService(QuestRepository questRepository, @Lazy TaskService taskService, PrologueService prologueService, EpilogueService epilogueService) {
         this.questRepository = questRepository;
         this.taskService = taskService;
+        this.prologueService = prologueService;
+        this.epilogueService = epilogueService;
     }
 
     public Quest save(Quest quest) {

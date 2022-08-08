@@ -44,4 +44,8 @@ public class PrologueService {
         return prologue;
     }
 
+    public void deleteByQuestId(long questId) {
+        prologueRepository.findPrologueByQuestId(questId).ifPresent(this::delete);
+    }
+
 }
