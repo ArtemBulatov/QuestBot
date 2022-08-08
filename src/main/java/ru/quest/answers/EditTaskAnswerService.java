@@ -24,7 +24,6 @@ import java.util.Map;
 import static ru.quest.answers.AnswerConstants.*;
 import static ru.quest.answers.EditHintAnswerService.ADD_NEW_HINT;
 import static ru.quest.answers.EditHintAnswerService.SHOW_HINTS;
-import static ru.quest.answers.EditQuestAnswerService.THIS_QUEST;
 
 @Service
 public class EditTaskAnswerService implements AnswerService {
@@ -412,7 +411,7 @@ public class EditTaskAnswerService implements AnswerService {
         buttonDTOList = new ArrayList<>();
         buttonDTOList.add(new InlineButtonDTO(DELETE_TASK, DELETE_TASK+ ":" + task.getId()));
         buttonDTOList.add(new InlineButtonDTO(ADD_NEW_TASK, ADD_NEW_TASK + ":" + task.getQuestId()));
-        buttonDTOList.add(new InlineButtonDTO(BACK, EditQuestAnswerService.getButtonDataToShowQuest(task.getQuestId(), 0)));
+        buttonDTOList.add(new InlineButtonDTO(BACK, Quest.getButtonDataToShowQuest(task.getQuestId(), 0)));
         inlineKeyboardMarkup.getKeyboard().addAll(ButtonsUtil.getInlineButtonsRowList(buttonDTOList, 1));
 
         return inlineKeyboardMarkup;

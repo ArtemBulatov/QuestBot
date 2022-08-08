@@ -8,9 +8,7 @@ import ru.quest.dto.MessageDTO;
 import ru.quest.enums.QuestType;
 import ru.quest.models.Quest;
 import ru.quest.models.Task;
-import ru.quest.services.LastAnswerService;
-import ru.quest.services.QuestService;
-import ru.quest.services.TaskService;
+import ru.quest.services.*;
 import ru.quest.utils.ButtonsUtil;
 import ru.quest.utils.ReservedCharacters;
 
@@ -24,11 +22,14 @@ import java.util.Map;
 import static ru.quest.answers.AnswerConstants.*;
 import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
 import static ru.quest.answers.EditTaskAnswerService.*;
+import static ru.quest.answers.EpilogueConstants.ADD_NEW_EPILOGUE;
+import static ru.quest.answers.EpilogueConstants.SHOW_EPILOGUE;
+import static ru.quest.answers.PrologueConstants.ADD_NEW_PROLOGUE;
+import static ru.quest.answers.PrologueConstants.SHOW_PROLOGUE;
 
 @Service
 public class EditQuestAnswerService implements AnswerService {
     public static final String CREATE_NEW_QUEST = "Создать новый квест";
-    public static final String THIS_QUEST = "thisQuest";
 
     private static final String DELETE_QUEST= "Удалить квест";
     private static final String ASK_ABOUT_DELETE_QUEST= "Вы действительно хотите безвозвратно удалить квест";
@@ -50,13 +51,21 @@ public class EditQuestAnswerService implements AnswerService {
     private final QuestService questService;
     private final TaskService taskService;
     private final LastAnswerService lastAnswerService;
+    private final PrologueService prologueService;
+    private final EpilogueService epilogueService;
 
     private final Map<Long, Quest> bufferForNewQuests = new HashMap<>();
 
-    public EditQuestAnswerService(QuestService questService, TaskService taskService, LastAnswerService lastAnswerService) {
+    public EditQuestAnswerService(QuestService questService,
+                                  TaskService taskService,
+                                  LastAnswerService lastAnswerService,
+                                  PrologueService prologueService,
+                                  EpilogueService epilogueService) {
         this.questService = questService;
         this.taskService = taskService;
         this.lastAnswerService = lastAnswerService;
+        this.prologueService = prologueService;
+        this.epilogueService = epilogueService;
     }
 
     @Override
@@ -135,7 +144,7 @@ public class EditQuestAnswerService implements AnswerService {
             Quest quest = questService.get(questId);
             List<InlineButtonDTO> buttons = new ArrayList<>();
             buttons.add(new InlineButtonDTO(DELETE_INSTRUCTION, DELETE_INSTRUCTION + ":" + quest.getId()));
-            buttons.add(new InlineButtonDTO(BACK, getButtonDataToShowQuest(quest.getId(), 0)));
+            buttons.add(new InlineButtonDTO(BACK, Quest.getButtonDataToShowQuest(quest.getId(), 0)));
             answerDTO.getEditMessages().add(getEditMessageText(getQuestInstruction(quest), buttons, 1, true, dto.getChatId(), dto.getMessageId()));
         }
         else if (dto.getText().matches(DELETE_INSTRUCTION + ":\\d+")) {
@@ -157,7 +166,7 @@ public class EditQuestAnswerService implements AnswerService {
             Quest quest = questService.get(questId);
             List<InlineButtonDTO> buttons = new ArrayList<>();
             buttons.add(new InlineButtonDTO(DELETE_END_NOTIFICATION, DELETE_END_NOTIFICATION + ":" + quest.getId()));
-            buttons.add(new InlineButtonDTO(BACK, getButtonDataToShowQuest(quest.getId(), 0)));
+            buttons.add(new InlineButtonDTO(BACK, Quest.getButtonDataToShowQuest(quest.getId(), 0)));
             answerDTO.getEditMessages().add(getEditMessageText(getQuestEndNotification(quest), buttons, 1, true, dto.getChatId(), dto.getMessageId()));
         }
         else if (dto.getText().matches(DELETE_END_NOTIFICATION + ":\\d+")) {
@@ -254,7 +263,7 @@ public class EditQuestAnswerService implements AnswerService {
 
             List<InlineButtonDTO> buttons = new ArrayList<>();
             buttons.add(new InlineButtonDTO(DELETE_INSTRUCTION, DELETE_INSTRUCTION + ":" + quest.getId()));
-            buttons.add(new InlineButtonDTO(BACK, getButtonDataToShowQuest(quest.getId(), 0)));
+            buttons.add(new InlineButtonDTO(BACK, Quest.getButtonDataToShowQuest(quest.getId(), 0)));
             answerDTO.getMessages().add(getSendMessageWithInlineButtons(getQuestInstruction(quest), buttons, 1, true, dto.getChatId()));
         }
 
@@ -266,7 +275,7 @@ public class EditQuestAnswerService implements AnswerService {
 
             List<InlineButtonDTO> buttons = new ArrayList<>();
             buttons.add(new InlineButtonDTO(DELETE_END_NOTIFICATION, DELETE_END_NOTIFICATION + ":" + quest.getId()));
-            buttons.add(new InlineButtonDTO(BACK, getButtonDataToShowQuest(quest.getId(), 0)));
+            buttons.add(new InlineButtonDTO(BACK, Quest.getButtonDataToShowQuest(quest.getId(), 0)));
             answerDTO.getMessages().add(getSendMessageWithInlineButtons(getQuestEndNotification(quest), buttons, 1, true, dto.getChatId()));
         }
 
@@ -302,6 +311,20 @@ public class EditQuestAnswerService implements AnswerService {
             buttonDTOList.add(new InlineButtonDTO(ADD_NEW_INSTRUCTION, ADD_NEW_INSTRUCTION + ":" + quest.getId()));
         }
 
+        if (prologueService.findByQuestId(quest.getId()) != null) {
+            buttonDTOList.add(new InlineButtonDTO(SHOW_PROLOGUE, SHOW_PROLOGUE + ":" + quest.getId()));
+        }
+        else {
+            buttonDTOList.add(new InlineButtonDTO(ADD_NEW_PROLOGUE, ADD_NEW_PROLOGUE + ":" + quest.getId()));
+        }
+
+        if (epilogueService.findByQuestId(quest.getId()) != null) {
+            buttonDTOList.add(new InlineButtonDTO(SHOW_EPILOGUE, SHOW_EPILOGUE + ":" + quest.getId()));
+        }
+        else {
+            buttonDTOList.add(new InlineButtonDTO(ADD_NEW_EPILOGUE, ADD_NEW_EPILOGUE + ":" + quest.getId()));
+        }
+
         if (quest.getNotificationBeforeEnd() != null && !quest.getNotificationBeforeEnd().isEmpty()) {
             buttonDTOList.add(new InlineButtonDTO(SHOW_END_NOTIFICATION, SHOW_END_NOTIFICATION + ":" + quest.getId()));
         }
@@ -313,8 +336,8 @@ public class EditQuestAnswerService implements AnswerService {
         inlineKeyboardMarkup.setKeyboard(ButtonsUtil.getInlineButtonsRowList(buttonDTOList, 1));
 
         buttonDTOList = new ArrayList<>();
-        buttonDTOList.add(new InlineButtonDTO(BEFORE, getButtonDataToShowQuest(quest.getId(), -1)));
-        buttonDTOList.add(new InlineButtonDTO(NEXT, getButtonDataToShowQuest(quest.getId(), 1)));
+        buttonDTOList.add(new InlineButtonDTO(BEFORE, Quest.getButtonDataToShowQuest(quest.getId(), -1)));
+        buttonDTOList.add(new InlineButtonDTO(NEXT, Quest.getButtonDataToShowQuest(quest.getId(), 1)));
         inlineKeyboardMarkup.getKeyboard().addAll(ButtonsUtil.getInlineButtonsRowList(buttonDTOList, 2));
 
         buttonDTOList = new ArrayList<>();
@@ -323,10 +346,6 @@ public class EditQuestAnswerService implements AnswerService {
         inlineKeyboardMarkup.getKeyboard().addAll(ButtonsUtil.getInlineButtonsRowList(buttonDTOList, 1));
 
         return inlineKeyboardMarkup;
-    }
-
-    public static String getButtonDataToShowQuest(long questId, int index) {
-        return THIS_QUEST + ":" + questId + " " + CHANGE_INDEX + ":" + index;
     }
 
     private String getQuestInfo(Quest quest, int num, int count) {
