@@ -52,6 +52,7 @@ public class QuestAnswerService implements AnswerService {
     private final TaskService taskService;
     private final HintService hintService;
     private final PrologueService prologueService;
+    private final EpilogueService epilogueService;
     private final QuestGameService questGameService;
     private final TaskCompletingService taskCompletingService;
     private final RegistrationService registrationService;
@@ -71,7 +72,7 @@ public class QuestAnswerService implements AnswerService {
             QuestService questService,
             TaskService taskService,
             HintService hintService,
-            PrologueService prologueService, QuestGameService questGameService,
+            PrologueService prologueService, EpilogueService epilogueService, QuestGameService questGameService,
             TaskCompletingService taskCompletingService,
             RegistrationService registrationService,
             LocationService locationService,
@@ -83,6 +84,7 @@ public class QuestAnswerService implements AnswerService {
         this.taskService = taskService;
         this.hintService = hintService;
         this.prologueService = prologueService;
+        this.epilogueService = epilogueService;
         this.questGameService = questGameService;
         this.taskCompletingService = taskCompletingService;
         this.registrationService = registrationService;
@@ -191,6 +193,10 @@ public class QuestAnswerService implements AnswerService {
         else if (dto.getText().matches(BEGIN_QUEST + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);
             Prologue prologue = prologueService.findByQuestId(questId);
+
+            QuestGame questGame = questGameService.create(questId, dto.getChatId());
+            games.put(dto.getChatId(), questGame);
+
             List<InlineButtonDTO> buttons = new ArrayList<>();
             buttons.add(new InlineButtonDTO(GET_TASKS, GET_TASKS + ":" + questId));
 
@@ -203,8 +209,7 @@ public class QuestAnswerService implements AnswerService {
         }
         else if (dto.getText().matches(GET_TASKS + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);
-            QuestGame questGame = questGameService.create(questId, dto.getChatId());
-            games.put(dto.getChatId(), questGame);
+            QuestGame questGame = games.get(dto.getChatId());
             List<Task> tasks = getAvailableTasks(questId, questGame).stream().filter(task -> !task.isLast())
                     .collect(Collectors.toList());
             sendMessageForTask(questGame, tasks, 0, dto.getChatId(), dto.getMessageId(), answerDTO);
@@ -557,7 +562,18 @@ public class QuestAnswerService implements AnswerService {
             else {
                 List<InlineButtonDTO> buttonDTOList = new ArrayList<>();
                 buttonDTOList.add(new InlineButtonDTO(COMPLETE_QUEST, COMPLETE_QUEST_DATA));
-                answerDTO.getMessages().add(getSendMessageWithInlineButtons("Задания закончились!", buttonDTOList, 1, false, chatId));
+
+                Epilogue epilogue = epilogueService.findByQuestId(questId);
+                if (epilogue == null) {
+                    answerDTO.getMessages().add(getSendMessageWithInlineButtons("Задания закончились!", buttonDTOList, 1, false, chatId));
+                }
+                else if (epilogue.getPhoto() == null) {
+                    answerDTO.getMessages().add(getSendMessageWithInlineButtons(epilogue.getText(), buttonDTOList, 1, false, chatId));
+                }
+                else {
+                    answerDTO.getPhotoMessages().add(getSendPhoto(epilogue.getText(), epilogue.getPhoto(), false, ButtonsUtil.getInlineButtons(buttonDTOList, 1), chatId));
+                }
+
             }
         }
     }
