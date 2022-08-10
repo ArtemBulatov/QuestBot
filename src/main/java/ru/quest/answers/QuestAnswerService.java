@@ -111,6 +111,7 @@ public class QuestAnswerService implements AnswerService {
 
             LocalDateTime dateTime = KhantyMansiyskDateTime.now();
             List<Quest> quests = questService.getaAllNotDeleted().stream().filter(quest -> quest.getDateTime().isAfter(dateTime)).toList();
+            quests.sort(Comparator.comparing(Quest::getDateTime));
             if (quests.isEmpty()) {
                 answerDTO.getMessages().add(getSendMessage("Квестов пока нет", dto.getChatId()));
                 return answerDTO;
