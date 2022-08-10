@@ -33,6 +33,7 @@ import static ru.quest.answers.EditTaskAnswerService.*;
 @Service
 public class QuestAnswerService implements AnswerService {
     private static final String REGISTER = "Зарегистрироваться";
+    private static final String ENTER_PHONE_NUMBER = "Введите номер телефона, начиная с 7";
     private static final String ENTER_TEAM_NAME = "Введите название вашей команды";
     private static final String ENTER_TEAM_MEMBERS_NUMBER = "Введите количество участников в команде";
     public static final String GET_TASKS = "Получить задания";
@@ -58,6 +59,7 @@ public class QuestAnswerService implements AnswerService {
     private final RegistrationService registrationService;
     private final LocationService locationService;
     private final PhotoService photoService;
+    private final ValidationService validationService;
     private final LastAnswerService lastAnswerService;
     private final QuestAdminBot adminBot;
 
@@ -72,11 +74,15 @@ public class QuestAnswerService implements AnswerService {
             QuestService questService,
             TaskService taskService,
             HintService hintService,
-            PrologueService prologueService, EpilogueService epilogueService, QuestGameService questGameService,
+            PrologueService prologueService,
+            EpilogueService epilogueService,
+            QuestGameService questGameService,
             TaskCompletingService taskCompletingService,
             RegistrationService registrationService,
             LocationService locationService,
-            PhotoService photoService, LastAnswerService lastAnswerService,
+            PhotoService photoService,
+            ValidationService validationService,
+            LastAnswerService lastAnswerService,
             @Lazy QuestAdminBot adminBot
     ) {
         this.userService = userService;
@@ -90,6 +96,7 @@ public class QuestAnswerService implements AnswerService {
         this.registrationService = registrationService;
         this.locationService = locationService;
         this.photoService = photoService;
+        this.validationService = validationService;
         this.lastAnswerService = lastAnswerService;
         this.adminBot = adminBot;
         games = new HashMap<>();
@@ -110,12 +117,19 @@ public class QuestAnswerService implements AnswerService {
             }
 
             LocalDateTime dateTime = KhantyMansiyskDateTime.now();
-            List<Quest> quests = questService.getaAllNotDeleted().stream().filter(quest -> quest.getDateTime().isAfter(dateTime)).toList();
-            quests.sort(Comparator.comparing(Quest::getDateTime));
+            List<Quest> quests = questService.getaAllNotDeleted().stream()
+                    .filter(quest -> quest.getDateTime().isAfter(dateTime))
+                    .collect(Collectors.toList());
+
             if (quests.isEmpty()) {
                 answerDTO.getMessages().add(getSendMessage("Квестов пока нет", dto.getChatId()));
                 return answerDTO;
             }
+
+            if (quests.size() > 1) {
+                quests.sort(Comparator.comparing(Quest::getDateTime));
+            }
+
             String[] buttons = new String[quests.size()];
             for (int i = 0; i < quests.size(); i++) {
                 buttons[i] = quests.get(i).getQuestButton();
@@ -146,33 +160,54 @@ public class QuestAnswerService implements AnswerService {
                 }
                 return answerDTO;
             }
+
+            registration = new Registration(dto.getChatId(), questId);
+            registrations.put(dto.getChatId(), registration);
+
             switch (quest.getType()) {
                 case GROUP -> {
-                    registration = new Registration(dto.getChatId(), questId);
-                    registrations.put(dto.getChatId(), registration);
                     answerDTO.getMessages().add(getSendMessage(ENTER_TEAM_NAME, dto.getChatId()));
                     lastAnswerService.addLastAnswer(ENTER_TEAM_NAME, dto.getChatId());
                 }
                 case INDIVIDUAL -> {
-                    registration = new Registration(dto.getChatId(), questId);
-                    registrationService.save(registration);
-                    answerDTO.getMessages().add(getSendMessage("Ваша заявка на квест \"" + quest.getName()+ "\" отправлена организаторам.", dto.getChatId()));
-                    sendNotificationToAdmin(NEW_REG_NOTIFICATION + " \"" + quest.getName() + "\"!");
+                    answerDTO.getMessages().add(getSendMessage(ENTER_PHONE_NUMBER, dto.getChatId()));
+                    lastAnswerService.addLastAnswer(ENTER_PHONE_NUMBER, dto.getChatId());
                 }
             }
         }
-
         else if (dto.getText().matches("\\d+")
                 && registrations.containsKey(dto.getChatId())
                 && lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_TEAM_MEMBERS_NUMBER)) {
             int membersNumber = Integer.parseInt(dto.getText());
-            Registration registration = registrations.remove(dto.getChatId());
-            registration.setTeamMembersNumber(membersNumber);
-            registration = registrationService.save(registration);
-            Quest quest = questService.get(registration.getQuestId());
-            answerDTO.getMessages().add(getSendMessage("Ваша заявка на квест \"" + quest.getName()+ "\" отправлена организаторам.", dto.getChatId()));
-            sendNotificationToAdmin(NEW_REG_NOTIFICATION + " \"" + quest.getName() + "\"!");
+            registrations.get(dto.getChatId()).setTeamMembersNumber(membersNumber);
+
+            answerDTO.getMessages().add(getSendMessage(ENTER_PHONE_NUMBER, dto.getChatId()));
+            lastAnswerService.addLastAnswer(ENTER_PHONE_NUMBER, dto.getChatId());
         }
+
+        else if (lastAnswerService.readLastAnswer(dto.getChatId()).equals(ENTER_PHONE_NUMBER)
+                && registrations.containsKey(dto.getChatId())) {
+            Registration registration = registrations.get(dto.getChatId());
+
+            if (registration != null) {
+                String phoneNumber = dto.getText();
+
+                if (!validationService.isPhoneValid(phoneNumber)) {
+                    answerDTO.getMessages().add(getSendMessage("Введите только цифры, начиная с 7", dto.getChatId()));
+                    return answerDTO;
+                }
+
+                registration.setPhoneNumber(phoneNumber);
+                registrationService.save(registration);
+
+                lastAnswerService.deleteLastAnswer(dto.getChatId());
+
+                Quest quest = questService.get(registration.getQuestId());
+                answerDTO.getMessages().add(getSendMessage("Ваша заявка на квест \"" + quest.getName()+ "\" отправлена организаторам.", dto.getChatId()));
+                sendNotificationToAdmin(NEW_REG_NOTIFICATION + " \"" + quest.getName() + "\"!");
+            }
+        }
+
         else if (dto.getText().matches("confirm" + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);
             Registration registration = registrationService.get(questId, dto.getChatId());

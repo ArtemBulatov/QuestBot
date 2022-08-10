@@ -15,6 +15,7 @@ public class Registration {
     private long userId;
     private long questId;
     private long eventId;
+    private String phoneNumber;
     private String teamName;
     private int teamMembersNumber;
     private boolean confirmed;
