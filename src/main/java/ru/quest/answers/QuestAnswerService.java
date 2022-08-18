@@ -62,6 +62,7 @@ public class QuestAnswerService implements AnswerService {
     private final ValidationService validationService;
     private final LastAnswerService lastAnswerService;
     private final QuestAdminBot adminBot;
+    private final LocationUtil locationUtil;
 
     private final Map<Long, QuestGame> games;
     private final Map<Long, Registration> registrations;
@@ -83,8 +84,8 @@ public class QuestAnswerService implements AnswerService {
             PhotoService photoService,
             ValidationService validationService,
             LastAnswerService lastAnswerService,
-            @Lazy QuestAdminBot adminBot
-    ) {
+            @Lazy QuestAdminBot adminBot,
+            LocationUtil locationUtil) {
         this.userService = userService;
         this.questService = questService;
         this.taskService = taskService;
@@ -99,6 +100,7 @@ public class QuestAnswerService implements AnswerService {
         this.validationService = validationService;
         this.lastAnswerService = lastAnswerService;
         this.adminBot = adminBot;
+        this.locationUtil = locationUtil;
         games = new HashMap<>();
         questGameService.getActiveQuestGames().forEach(questGame -> games.put(questGame.getUserId(), questGame));
         registrations = new HashMap<>();
@@ -493,7 +495,7 @@ public class QuestAnswerService implements AnswerService {
         else if (dto.getLocation() != null && lastAnswerService.readLastAnswer(dto.getChatId()).matches(CONFIRM_LOCATION + ":\\d+")) {
             long taskId = Long.parseLong(lastAnswerService.readLastAnswer(dto.getChatId()).split(":")[1]);
             Task task = taskService.get(taskId);
-            boolean isTrueLocation = LocationUtil.compareLocations(task.getLocation(), dto.getLocation());
+            boolean isTrueLocation = locationUtil.compareLocations(task.getLocation(), dto.getLocation());
             if (isTrueLocation) {
                 Location location = locationService.save(dto.getLocation());
                 QuestGame questGame = games.get(dto.getChatId());
