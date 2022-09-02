@@ -248,6 +248,12 @@ public class QuestAnswerService implements AnswerService {
         else if (dto.getText().matches(GET_TASKS + ":\\d+")) {
             long questId = Long.parseLong(dto.getText().split(":")[1]);
             QuestGame questGame = games.get(dto.getChatId());
+
+            if (questGame == null) {
+                questGame = questGameService.create(questId, dto.getChatId());
+                games.put(dto.getChatId(), questGame);
+            }
+
             List<Task> tasks = getAvailableTasks(questId, questGame).stream().filter(task -> !task.isLast())
                     .collect(Collectors.toList());
             sendMessageForTask(questGame, tasks, 0, dto.getChatId(), dto.getMessageId(), answerDTO);
