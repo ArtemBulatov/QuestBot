@@ -8,6 +8,7 @@ import ru.quest.QuestBot;
 import ru.quest.answers.QuestAnswerService;
 import ru.quest.dto.InlineButtonDTO;
 import ru.quest.enums.RegistrationStatus;
+import ru.quest.models.Prologue;
 import ru.quest.models.Quest;
 import ru.quest.utils.ButtonsUtil;
 import ru.quest.utils.KhantyMansiyskDateTime;
@@ -18,18 +19,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.quest.answers.QuestAnswerService.BEGIN_QUEST;
 import static ru.quest.answers.QuestAnswerService.GET_TASKS;
 
 @Slf4j
 @Service
 public class NotificationService {
     private final QuestService questService;
+    private final PrologueService prologueService;
     private final RegistrationService registrationService;
     private final QuestGameService questGameService;
     private final QuestBot questBot;
 
-    public NotificationService(QuestService questService, RegistrationService registrationService, QuestGameService questGameService, QuestBot questBot) {
+    public NotificationService(QuestService questService, PrologueService prologueService, RegistrationService registrationService, QuestGameService questGameService, QuestBot questBot) {
         this.questService = questService;
+        this.prologueService = prologueService;
         this.registrationService = registrationService;
         this.questGameService = questGameService;
         this.questBot = questBot;
@@ -62,7 +66,14 @@ public class NotificationService {
                                             registration.getUserId());
 
                                     List<InlineButtonDTO> buttonDTOList = new ArrayList<>();
-                                    buttonDTOList.add(new InlineButtonDTO(GET_TASKS, GET_TASKS + ":" + quest.getId()));
+
+                                    Prologue prologue = prologueService.findByQuestId(quest.getId());
+                                    if (prologue == null) {
+                                        buttonDTOList.add(new InlineButtonDTO(GET_TASKS, GET_TASKS + ":" + quest.getId()));
+                                    }
+                                    else {
+                                        buttonDTOList.add(new InlineButtonDTO(BEGIN_QUEST, BEGIN_QUEST + ":" + quest.getId()));
+                                    }
                                     sendMessage.setReplyMarkup(ButtonsUtil.getInlineButtons(buttonDTOList, 1));
                                     questBot.sendTheMessage(sendMessage);
                                     registrationService.delete(registration.getId());

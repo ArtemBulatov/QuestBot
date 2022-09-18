@@ -182,6 +182,7 @@ public class ApproveRegistrationAnswerService implements AnswerService {
         return "Квест: " + quest.getName() +
                 "\n\n" + num + "/" + count +
                 "\n\nПользователь: " + user.getFirstName() + " " + user.getLastName() + " (@" + user.getUserName() + ")" +
+                "\nНомер телефона: +" + registration.getPhoneNumber() +
                 teamInfo;
     }
 }

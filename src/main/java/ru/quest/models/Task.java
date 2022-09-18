@@ -26,4 +26,8 @@ public class Task {
     private Location location;
     @OneToOne
     private Photo photo;
+    @OneToOne
+    private Photo trueAnswerPhoto;
+    @OneToOne
+    private Photo falseAnswerPhoto;
 }

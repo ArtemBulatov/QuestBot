@@ -30,8 +30,11 @@ import java.util.Map;
 import static ru.quest.answers.AnswerConstants.*;
 import static ru.quest.answers.EditHintAnswerService.*;
 import static ru.quest.answers.EditQuestAnswerService.CREATE_NEW_QUEST;
-import static ru.quest.answers.EditQuestAnswerService.THIS_QUEST;
 import static ru.quest.answers.EditTaskAnswerService.*;
+import static ru.quest.answers.EpilogueConstants.ADD_NEW_EPILOGUE;
+import static ru.quest.answers.EpilogueConstants.SHOW_EPILOGUE;
+import static ru.quest.answers.PrologueConstants.ADD_NEW_PROLOGUE;
+import static ru.quest.answers.PrologueConstants.SHOW_PROLOGUE;
 
 @Slf4j
 @Component
@@ -51,19 +54,31 @@ public class QuestAdminBot extends TelegramLongPollingBot {
     private final EditQuestAnswerService editQuestAnswerService;
     private final EditTaskAnswerService editTaskAnswerService;
     private final EditHintAnswerService editHintAnswerService;
+    private final EditPrologueAnswerService editPrologueAnswerService;
+    private final EditEpilogueAnswerService editEpilogueAnswerService;
     private final ApproveRegistrationAnswerService approveRegistrationAnswerService;
     private final ConfirmAnswerService confirmAnswerService;
     private final ResultQuestGameAnswerService resultQuestGameAnswerService;
     private final UserService userService;
 
-    public QuestAdminBot(EditQuestAnswerService editQuestAnswerService, UserService userService, EditTaskAnswerService editTaskAnswerService, EditHintAnswerService editHintAnswerService, ApproveRegistrationAnswerService approveRegistrationAnswerService, ConfirmAnswerService confirmAnswerService, ResultQuestGameAnswerService resultQuestGameAnswerService, UserService userService1) {
+    public QuestAdminBot(EditQuestAnswerService editQuestAnswerService,
+                         EditTaskAnswerService editTaskAnswerService,
+                         EditHintAnswerService editHintAnswerService,
+                         EditPrologueAnswerService editPrologueAnswerService,
+                         EditEpilogueAnswerService editEpilogueAnswerService,
+                         ApproveRegistrationAnswerService approveRegistrationAnswerService,
+                         ConfirmAnswerService confirmAnswerService,
+                         ResultQuestGameAnswerService resultQuestGameAnswerService,
+                         UserService userService) {
         this.editQuestAnswerService = editQuestAnswerService;
         this.editTaskAnswerService = editTaskAnswerService;
         this.editHintAnswerService = editHintAnswerService;
+        this.editPrologueAnswerService = editPrologueAnswerService;
+        this.editEpilogueAnswerService = editEpilogueAnswerService;
         this.approveRegistrationAnswerService = approveRegistrationAnswerService;
         this.confirmAnswerService = confirmAnswerService;
         this.resultQuestGameAnswerService = resultQuestGameAnswerService;
-        this.userService = userService1;
+        this.userService = userService;
         userService.getAll().stream().filter(User::isAdmin).forEach(user -> statusMap.put(user.getId(), AdminStatus.EDIT_QUEST));
     }
 
@@ -108,6 +123,12 @@ public class QuestAdminBot extends TelegramLongPollingBot {
                 || messageDTO.getText().matches(TASK_ID + ":\\d+ " + THIS_HINT + ":\\d+ " + CHANGE_INDEX + ":-?\\d+")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.EDIT_HINT);
         }
+        else if (messageDTO.getText().matches(SHOW_PROLOGUE+ ":\\d+") || messageDTO.getText().matches(ADD_NEW_PROLOGUE+ ":\\d+")) {
+            statusMap.put(messageDTO.getChatId(), AdminStatus.EDIT_PROLOGUE);
+        }
+        else if (messageDTO.getText().matches(SHOW_EPILOGUE+ ":\\d+") || messageDTO.getText().matches(ADD_NEW_EPILOGUE+ ":\\d+")) {
+            statusMap.put(messageDTO.getChatId(), AdminStatus.EDIT_EPILOGUE);
+        }
         else if (messageDTO.getText().equals("/registrations")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.REGISTRATIONS);
         }
@@ -123,6 +144,8 @@ public class QuestAdminBot extends TelegramLongPollingBot {
             case EDIT_QUEST -> editQuestAnswerService;
             case EDIT_TASK -> editTaskAnswerService;
             case EDIT_HINT -> editHintAnswerService;
+            case EDIT_PROLOGUE -> editPrologueAnswerService;
+            case EDIT_EPILOGUE -> editEpilogueAnswerService;
             case REGISTRATIONS -> approveRegistrationAnswerService;
             case QUEST_ANSWER -> confirmAnswerService;
             case QUEST_RESULTS -> resultQuestGameAnswerService;

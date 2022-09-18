@@ -7,6 +7,9 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
+import static ru.quest.answers.AnswerConstants.THIS_QUEST;
+
 @Entity
 @Data
 @Table(name = "quests")
@@ -27,5 +30,9 @@ public class Quest {
 
     public String getQuestButton() {
         return name + " " + dateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+    }
+
+    public static String getButtonDataToShowQuest(long questId, int index) {
+        return THIS_QUEST + ":" + questId + " " + CHANGE_INDEX + ":" + index;
     }
 }

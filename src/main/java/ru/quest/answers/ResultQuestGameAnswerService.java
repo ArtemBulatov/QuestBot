@@ -121,6 +121,7 @@ public class ResultQuestGameAnswerService implements AnswerService {
         return "Квест: " + quest.getName() +
                 "\n\n" + num + "/" + count +
                 "\n\nПользователь: " + user.getFirstName() + " " + user.getLastName() + " (@" + user.getUserName() + ")" +
+                "\nНомер телефона: +" + registration.getPhoneNumber() +
                 teamInfo +
                 "\n\nВремя начала прохождения квеста: " + questGame.getStartTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")) +
                 "\nВремя окончания прохождения квеста: " + questGame.getEndTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")) +

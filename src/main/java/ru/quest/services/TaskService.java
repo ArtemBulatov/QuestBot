@@ -38,6 +38,8 @@ public class TaskService {
         hintService.deleteAllByTaskId(task.getId());
         taskRepository.delete(task);
         if (task.getPhoto() != null) photoService.delete(task.getPhoto());
+        if (task.getFalseAnswerPhoto() != null) photoService.delete(task.getFalseAnswerPhoto());
+        if (task.getTrueAnswerPhoto() != null) photoService.delete(task.getTrueAnswerPhoto());
         if (task.getLocation() != null) locationService.delete(task.getLocation());
     }
 
