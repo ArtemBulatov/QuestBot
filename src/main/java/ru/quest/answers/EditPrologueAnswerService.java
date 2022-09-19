@@ -11,7 +11,7 @@ import ru.quest.services.LastAnswerService;
 import ru.quest.services.PhotoService;
 import ru.quest.services.PrologueService;
 
-import static ru.quest.answers.PrologueConstants.*;
+import static ru.quest.answers.constants.PrologueConstants.*;
 
 @Service
 public class EditPrologueAnswerService implements AnswerService{

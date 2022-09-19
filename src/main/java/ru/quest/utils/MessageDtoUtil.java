@@ -3,6 +3,7 @@ package ru.quest.utils;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.quest.dto.MessageDTO;
+import ru.quest.dto.VideoDTO;
 import ru.quest.models.Location;
 
 @Service
@@ -16,11 +17,13 @@ public class MessageDtoUtil {
             if (update.getMessage().getPhoto() != null) {
                 messageDTO.setPhotoSizeList(update.getMessage().getPhoto());
             }
+            if (update.getMessage().getVideo() != null) {
+                messageDTO.setVideoDTO(new VideoDTO(update.getMessage().getVideo()));
+            }
             if (update.getMessage().getText() != null) {
                 messageDTO.setText(update.getMessage().getText());
             }
             if (update.getMessage().getLocation() != null) {
-
                 messageDTO.setLocation(new Location(update.getMessage().getLocation().getLongitude(), update.getMessage().getLocation().getLatitude()));
             }
         }

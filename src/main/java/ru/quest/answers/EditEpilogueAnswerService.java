@@ -11,7 +11,7 @@ import ru.quest.services.EpilogueService;
 import ru.quest.services.LastAnswerService;
 import ru.quest.services.PhotoService;
 
-import static ru.quest.answers.EpilogueConstants.*;
+import static ru.quest.answers.constants.EpilogueConstants.*;
 
 @Service
 public class EditEpilogueAnswerService implements AnswerService{

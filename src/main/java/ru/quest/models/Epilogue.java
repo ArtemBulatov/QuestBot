@@ -13,8 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.quest.answers.AnswerConstants.BACK;
-import static ru.quest.answers.EpilogueConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.BACK;
+import static ru.quest.answers.constants.EpilogueConstants.*;
 
 @Entity
 @Data

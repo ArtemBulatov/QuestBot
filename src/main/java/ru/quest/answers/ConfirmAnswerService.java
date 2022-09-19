@@ -5,7 +5,7 @@ import ru.quest.QuestBot;
 import ru.quest.dto.AnswerDTO;
 import ru.quest.dto.MessageDTO;
 
-import static ru.quest.answers.AnswerConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
 
 @Service
 public class ConfirmAnswerService implements AnswerService {

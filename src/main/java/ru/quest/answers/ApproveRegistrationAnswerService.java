@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.quest.answers.AnswerConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
 import static ru.quest.answers.EditTaskAnswerService.QUEST_ID;
 
 @Service

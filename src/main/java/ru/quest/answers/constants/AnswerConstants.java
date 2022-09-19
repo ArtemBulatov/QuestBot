@@ -1,4 +1,4 @@
-package ru.quest.answers;
+package ru.quest.answers.constants;
 
 public class AnswerConstants {
     public static final String NEXT = ">>";

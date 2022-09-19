@@ -5,7 +5,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import ru.quest.answers.EditQuestAnswerService;
 import ru.quest.dto.InlineButtonDTO;
 import ru.quest.utils.ButtonsUtil;
 
@@ -14,8 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.quest.answers.AnswerConstants.*;
-import static ru.quest.answers.PrologueConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
+import static ru.quest.answers.constants.PrologueConstants.*;
 
 @Entity
 @Data

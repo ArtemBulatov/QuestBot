@@ -7,8 +7,8 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
-import static ru.quest.answers.AnswerConstants.THIS_QUEST;
+import static ru.quest.answers.constants.AnswerConstants.CHANGE_INDEX;
+import static ru.quest.answers.constants.AnswerConstants.THIS_QUEST;
 
 @Entity
 @Data

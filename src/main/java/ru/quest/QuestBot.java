@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
-import org.telegram.telegrambots.meta.api.methods.send.SendLocation;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
@@ -74,6 +71,7 @@ public class QuestBot extends TelegramLongPollingBot {
         dto.getMessages().forEach(this::sendTheMessage);
         dto.getEditMessages().forEach(this::sendTheEditMessage);
         dto.getPhotoMessages().forEach(this::sendThePhoto);
+        dto.getVideoMessages().forEach(this::sendTheVideo);
         dto.getEditMessageMedia().forEach(this::sendTheMedia);
         dto.getEditMessageCaptions().forEach(this::sendEditMessage);
         dto.getCallbackQueries().forEach(this::sendTheCallbackQuery);
@@ -108,6 +106,14 @@ public class QuestBot extends TelegramLongPollingBot {
     public void sendThePhoto(SendPhoto sendPhoto) {
         try {
             execute(sendPhoto);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    public void sendTheVideo(SendVideo sendVideo) {
+        try {
+            execute(sendVideo);
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }

@@ -14,18 +14,15 @@ import ru.quest.utils.ReservedCharacters;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static ru.quest.answers.AnswerConstants.*;
-import static ru.quest.answers.AnswerConstants.CHANGE_INDEX;
+import static ru.quest.answers.constants.AnswerConstants.*;
 import static ru.quest.answers.EditTaskAnswerService.*;
-import static ru.quest.answers.EpilogueConstants.ADD_NEW_EPILOGUE;
-import static ru.quest.answers.EpilogueConstants.SHOW_EPILOGUE;
-import static ru.quest.answers.PrologueConstants.ADD_NEW_PROLOGUE;
-import static ru.quest.answers.PrologueConstants.SHOW_PROLOGUE;
+import static ru.quest.answers.constants.EpilogueConstants.ADD_NEW_EPILOGUE;
+import static ru.quest.answers.constants.EpilogueConstants.SHOW_EPILOGUE;
+import static ru.quest.answers.constants.InstructionConstants.*;
+import static ru.quest.answers.constants.PrologueConstants.ADD_NEW_PROLOGUE;
+import static ru.quest.answers.constants.PrologueConstants.SHOW_PROLOGUE;
 
 @Service
 public class EditQuestAnswerService implements AnswerService {
@@ -37,10 +34,6 @@ public class EditQuestAnswerService implements AnswerService {
     private static final String CHOOSE_TYPE = "Выберите тип квеста";
     private static final String ENTER_DESCRIPTION = "Введите описание";
     private static final String ENTER_DATETIME = "Введите дату и время начала квеста в формате 12.12.2012 12:00";
-    private static final String ADD_NEW_INSTRUCTION = "Добавить инструкцию";
-    private static final String ENTER_INSTRUCTION_TEXT = "Введите текст инструкции";
-    private static final String SHOW_INSTRUCTION = "Посмотреть инструкцию";
-    private static final String DELETE_INSTRUCTION = "Удалить инструкцию";
     private static final String CHANGE_DATETIME = "Изменить дату и время";
     private static final String ADD_NEW_END_NOTIFICATION = "Добавить уведомление за 30 мин";
     private static final String ENTER_END_NOTIFICATION_TEXT = "Введите текст уведомления за 30 мин";
@@ -53,6 +46,7 @@ public class EditQuestAnswerService implements AnswerService {
     private final LastAnswerService lastAnswerService;
     private final PrologueService prologueService;
     private final EpilogueService epilogueService;
+    private final InstructionService instructionService;
 
     private final Map<Long, Quest> bufferForNewQuests = new HashMap<>();
 
@@ -60,12 +54,13 @@ public class EditQuestAnswerService implements AnswerService {
                                   TaskService taskService,
                                   LastAnswerService lastAnswerService,
                                   PrologueService prologueService,
-                                  EpilogueService epilogueService) {
+                                  EpilogueService epilogueService, InstructionService instructionService) {
         this.questService = questService;
         this.taskService = taskService;
         this.lastAnswerService = lastAnswerService;
         this.prologueService = prologueService;
         this.epilogueService = epilogueService;
+        this.instructionService = instructionService;
     }
 
     @Override
@@ -304,7 +299,7 @@ public class EditQuestAnswerService implements AnswerService {
             buttonDTOList.add(new InlineButtonDTO(SHOW_TASKS, EditTaskAnswerService.getButtonDataToShowTask(quest.getId(), tasks.get(0).getId(), 0)));
         }
 
-        if (quest.getInstruction() != null && !quest.getInstruction().isEmpty()) {
+        if (instructionService.findByQuestId(quest.getId()).isPresent()) {
             buttonDTOList.add(new InlineButtonDTO(SHOW_INSTRUCTION, SHOW_INSTRUCTION + ":" + quest.getId()));
         }
         else {

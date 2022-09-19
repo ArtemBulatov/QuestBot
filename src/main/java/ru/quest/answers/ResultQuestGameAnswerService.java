@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static ru.quest.answers.AnswerConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
 
 @Service
 public class ResultQuestGameAnswerService implements AnswerService {

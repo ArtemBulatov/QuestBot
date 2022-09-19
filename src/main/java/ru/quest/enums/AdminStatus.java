@@ -6,6 +6,7 @@ public enum AdminStatus {
     EDIT_HINT,
     EDIT_PROLOGUE,
     EDIT_EPILOGUE,
+    EDIT_INSTRUCTION,
     REGISTRATIONS,
     QUEST_ANSWER,
     QUEST_RESULTS

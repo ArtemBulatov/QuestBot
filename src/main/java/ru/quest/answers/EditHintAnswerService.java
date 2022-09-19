@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static ru.quest.answers.AnswerConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
 
 @Service
 public class EditHintAnswerService implements AnswerService {

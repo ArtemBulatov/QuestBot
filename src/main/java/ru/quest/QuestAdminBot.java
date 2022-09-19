@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
-import org.telegram.telegrambots.meta.api.methods.send.SendLocation;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.*;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -27,14 +24,16 @@ import ru.quest.utils.MessageDtoUtil;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ru.quest.answers.AnswerConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
 import static ru.quest.answers.EditHintAnswerService.*;
 import static ru.quest.answers.EditQuestAnswerService.CREATE_NEW_QUEST;
 import static ru.quest.answers.EditTaskAnswerService.*;
-import static ru.quest.answers.EpilogueConstants.ADD_NEW_EPILOGUE;
-import static ru.quest.answers.EpilogueConstants.SHOW_EPILOGUE;
-import static ru.quest.answers.PrologueConstants.ADD_NEW_PROLOGUE;
-import static ru.quest.answers.PrologueConstants.SHOW_PROLOGUE;
+import static ru.quest.answers.constants.EpilogueConstants.ADD_NEW_EPILOGUE;
+import static ru.quest.answers.constants.EpilogueConstants.SHOW_EPILOGUE;
+import static ru.quest.answers.constants.InstructionConstants.ADD_NEW_INSTRUCTION;
+import static ru.quest.answers.constants.InstructionConstants.SHOW_INSTRUCTION;
+import static ru.quest.answers.constants.PrologueConstants.ADD_NEW_PROLOGUE;
+import static ru.quest.answers.constants.PrologueConstants.SHOW_PROLOGUE;
 
 @Slf4j
 @Component
@@ -56,6 +55,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
     private final EditHintAnswerService editHintAnswerService;
     private final EditPrologueAnswerService editPrologueAnswerService;
     private final EditEpilogueAnswerService editEpilogueAnswerService;
+    private final EditInstructionAnswerService editInstructionAnswerService;
     private final ApproveRegistrationAnswerService approveRegistrationAnswerService;
     private final ConfirmAnswerService confirmAnswerService;
     private final ResultQuestGameAnswerService resultQuestGameAnswerService;
@@ -66,6 +66,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
                          EditHintAnswerService editHintAnswerService,
                          EditPrologueAnswerService editPrologueAnswerService,
                          EditEpilogueAnswerService editEpilogueAnswerService,
+                         EditInstructionAnswerService editInstructionAnswerService,
                          ApproveRegistrationAnswerService approveRegistrationAnswerService,
                          ConfirmAnswerService confirmAnswerService,
                          ResultQuestGameAnswerService resultQuestGameAnswerService,
@@ -75,6 +76,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         this.editHintAnswerService = editHintAnswerService;
         this.editPrologueAnswerService = editPrologueAnswerService;
         this.editEpilogueAnswerService = editEpilogueAnswerService;
+        this.editInstructionAnswerService = editInstructionAnswerService;
         this.approveRegistrationAnswerService = approveRegistrationAnswerService;
         this.confirmAnswerService = confirmAnswerService;
         this.resultQuestGameAnswerService = resultQuestGameAnswerService;
@@ -129,6 +131,9 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         else if (messageDTO.getText().matches(SHOW_EPILOGUE+ ":\\d+") || messageDTO.getText().matches(ADD_NEW_EPILOGUE+ ":\\d+")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.EDIT_EPILOGUE);
         }
+        else if (messageDTO.getText().matches(SHOW_INSTRUCTION+ ":\\d+") || messageDTO.getText().matches(ADD_NEW_INSTRUCTION+ ":\\d+")) {
+            statusMap.put(messageDTO.getChatId(), AdminStatus.EDIT_INSTRUCTION);
+        }
         else if (messageDTO.getText().equals("/registrations")) {
             statusMap.put(messageDTO.getChatId(), AdminStatus.REGISTRATIONS);
         }
@@ -146,6 +151,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
             case EDIT_HINT -> editHintAnswerService;
             case EDIT_PROLOGUE -> editPrologueAnswerService;
             case EDIT_EPILOGUE -> editEpilogueAnswerService;
+            case EDIT_INSTRUCTION -> editInstructionAnswerService;
             case REGISTRATIONS -> approveRegistrationAnswerService;
             case QUEST_ANSWER -> confirmAnswerService;
             case QUEST_RESULTS -> resultQuestGameAnswerService;
@@ -157,6 +163,7 @@ public class QuestAdminBot extends TelegramLongPollingBot {
         dto.getMessages().forEach(this::sendTheMessage);
         dto.getEditMessages().forEach(this::sendTheEditMessage);
         dto.getPhotoMessages().forEach(this::sendThePhoto);
+        dto.getVideoMessages().forEach(this::sendTheVideo);
         dto.getEditMessageMedia().forEach(this::sendTheMedia);
         dto.getEditMessageCaptions().forEach(this::sendEditMessage);
         dto.getCallbackQueries().forEach(this::sendTheCallbackQuery);
@@ -191,6 +198,14 @@ public class QuestAdminBot extends TelegramLongPollingBot {
     public void sendThePhoto(SendPhoto sendPhoto) {
         try {
             execute(sendPhoto);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    public void sendTheVideo(SendVideo sendVideo) {
+        try {
+            execute(sendVideo);
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }

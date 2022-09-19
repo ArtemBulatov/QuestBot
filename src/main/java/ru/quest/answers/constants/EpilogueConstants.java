@@ -1,4 +1,4 @@
-package ru.quest.answers;
+package ru.quest.answers.constants;
 
 public class EpilogueConstants {
     public static final String EPILOGUE = "Эпилог";

@@ -2,6 +2,7 @@ package ru.quest.dto;
 
 import lombok.Data;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
+import org.telegram.telegrambots.meta.api.objects.Video;
 import ru.quest.models.Location;
 
 import java.util.ArrayList;
@@ -14,5 +15,6 @@ public class MessageDTO {
     private String callbackQueryId = "";
     private String text = "";
     private Location location;
+    private VideoDTO videoDTO;
     private List<PhotoSize> photoSizeList = new ArrayList<>();
 }

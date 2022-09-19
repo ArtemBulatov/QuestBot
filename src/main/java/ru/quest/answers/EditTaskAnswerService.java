@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static ru.quest.answers.AnswerConstants.*;
+import static ru.quest.answers.constants.AnswerConstants.*;
 import static ru.quest.answers.EditHintAnswerService.ADD_NEW_HINT;
 import static ru.quest.answers.EditHintAnswerService.SHOW_HINTS;
 
